@@ -4,7 +4,7 @@
     "type": "library",
     "keywords": [
         "zf2",
-        "akismet"
+        "twitter"
     ],
     "homepage": "http://packages.zendframework.com/",
     "license": "BSD-3-Clause",
@@ -13,7 +13,6 @@
             "ZendService": "library/"
         }
     },
-    "target-dir": "ZendService/Akismet",
     "repositories": [
         {
             "type": "composer",
