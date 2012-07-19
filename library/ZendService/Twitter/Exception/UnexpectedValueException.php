@@ -8,7 +8,7 @@
  * @package   Zend_Service
  */
 
-namespace Zend\Service\Twitter\Exception;
+namespace ZendService\Twitter\Exception;
 
 /**
  * @category   Zend

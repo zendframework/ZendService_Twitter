@@ -8,9 +8,9 @@
  * @package   Zend_Service
  */
 
-namespace ZendTest\Service\Twitter;
+namespace ZendServiceTest\Twitter;
 
-use Zend\Service\Twitter;
+use ZendService\Twitter;
 use Zend\Config;
 
 /**
@@ -23,7 +23,7 @@ use Zend\Config;
 class SearchTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var \Zend\Service\Twitter\Search $twitter
+     * @var \ZendService\Twitter\Search $twitter
      */
     protected $twitter;
 
@@ -79,7 +79,7 @@ class SearchTest extends \PHPUnit_Framework_TestCase
             'result_type' => 'mixed',
             'show_user'   => true
         ));
-        $this->assertEquals('Zend\Service\Twitter\SearchOptions', get_class($this->twitter->getOptions()));
+        $this->assertEquals('ZendService\Twitter\SearchOptions', get_class($this->twitter->getOptions()));
         $this->assertEquals('fr', $this->twitter->getOptions()->getLanguage());
         $this->assertEquals('mixed', $this->twitter->getOptions()->getResultType());
     }
@@ -92,7 +92,7 @@ class SearchTest extends \PHPUnit_Framework_TestCase
             'result_type'      => 'mixed',
             'show_user'        => true
         ));
-        $this->assertEquals('Zend\Service\Twitter\SearchOptions', get_class($this->twitter->getOptions()));
+        $this->assertEquals('ZendService\Twitter\SearchOptions', get_class($this->twitter->getOptions()));
         $this->assertEquals('fr', $this->twitter->getOptions()->getLanguage());
         $this->assertEquals('mixed', $this->twitter->getOptions()->getResultType());
     }
@@ -104,7 +104,7 @@ class SearchTest extends \PHPUnit_Framework_TestCase
             'result_type' => 'mixed',
             'show_user'   => true
         )));
-        $this->assertEquals('Zend\Service\Twitter\SearchOptions', get_class($this->twitter->getOptions()));
+        $this->assertEquals('ZendService\Twitter\SearchOptions', get_class($this->twitter->getOptions()));
         $this->assertEquals('fr', $this->twitter->getOptions()->getLanguage());
         $this->assertEquals('mixed', $this->twitter->getOptions()->getResultType());
     }

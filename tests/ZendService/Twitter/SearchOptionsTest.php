@@ -8,9 +8,9 @@
  * @package   Zend_Service
  */
 
-namespace ZendTest\Service\Twitter;
+namespace ZendServiceTest\Twitter;
 
-use Zend\Service\Twitter;
+use ZendService\Twitter;
 
 /**
  * @category   Zend
@@ -22,7 +22,7 @@ use Zend\Service\Twitter;
 class SearchOptionsTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var \Zend\Service\Twitter\Search $twitter
+     * @var \ZendService\Twitter\Search $twitter
      */
     protected $twitter;
 

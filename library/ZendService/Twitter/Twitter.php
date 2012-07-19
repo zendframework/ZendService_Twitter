@@ -8,7 +8,7 @@
  * @package   Zend_Service
  */
 
-namespace Zend\Service\Twitter;
+namespace ZendService\Twitter;
 
 use Traversable;
 use Zend\Http;
