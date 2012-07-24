@@ -1,5 +1,5 @@
 {
-    "name": "zendframework/zendservice-twitter",
+    "name": "zendframework/zend-service-twitter",
     "description": "OOP wrapper for the Twitter web service",
     "type": "library",
     "keywords": [
