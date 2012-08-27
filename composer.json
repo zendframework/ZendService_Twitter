@@ -1,5 +1,5 @@
 {
-    "name": "zendframework/zendservice-twitter",
+    "name": "chrisweb/zendservice-twitter",
     "description": "OOP wrapper for the Twitter web service",
     "type": "library",
     "keywords": [
@@ -21,9 +21,9 @@
     ],
     "require": {
         "php": ">=5.3.3",
-        "zendframework/zend-http": ">=2.0.0beta5",
-        "zendframework/zend-uri": ">=2.0.0beta5",
-        "zendframework/zend-version": ">=2.0.0beta5"
+        "zendframework/zend-http": ">=2.0.0rc5",
+        "zendframework/zend-uri": ">=2.0.0rc5",
+        "zendframework/zend-version": ">=2.0.0rc5"
     },
     "extra": {
         "branch-alias": {
