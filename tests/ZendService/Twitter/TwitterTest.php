@@ -13,7 +13,7 @@ namespace ZendTest\Twitter;
 use ZendService\Twitter;
 use Zend\Service;
 use Zend\Http;
-use Zend\Rest;
+use ZendRest;
 
 /**
  * @category   Zend
