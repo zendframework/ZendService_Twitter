@@ -13,7 +13,7 @@ namespace ZendService\Twitter;
 use Zend\Feed;
 use Zend\Http;
 use Zend\Json;
-use Zend\Rest\Client;
+use ZendRest\Client;
 
 /**
  * @category   Zend
