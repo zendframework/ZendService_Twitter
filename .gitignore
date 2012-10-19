@@ -1,1 +1,11 @@
 vendor/
+nbproject
+.idea
+.buildpath
+.project
+.settings/
+tmp/
+.DS_Store
+composer.lock
+.*.sw*
+.*.un~
