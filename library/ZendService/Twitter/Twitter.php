@@ -13,8 +13,7 @@ namespace ZendService\Twitter;
 use Traversable;
 use Zend\Http;
 use Zend\OAuth;
-use Zend\Rest;
-use Zend\Rest\Client;
+use ZendRest\Client;
 use Zend\Stdlib\ArrayUtils;
 use Zend\Uri;
 
@@ -149,7 +148,7 @@ class Twitter extends Client\RestClient
 
     /**
      * Get the local HTTP client as distinct from the static HTTP client
-     * inherited from \Zend\Rest\Client
+     * inherited from \ZendRest\Client
      *
      * @return \Zend\Http\Client
      */
