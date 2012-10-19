@@ -12,7 +12,7 @@ namespace ZendService\Twitter;
 
 use Traversable;
 use Zend\Http;
-use Zend\OAuth;
+use ZendOAuth as OAuth;
 use ZendRest\Client;
 use Zend\Stdlib\ArrayUtils;
 use Zend\Uri;
@@ -67,9 +67,9 @@ class Twitter extends Client\RestClient
     protected $methodType;
 
     /**
-     * Zend\Oauth Consumer
+     * Oauth Consumer
      *
-     * @var \Zend\OAuth\Consumer
+     * @var OAuth\Consumer
      */
     protected $oauthConsumer = null;
 
@@ -136,7 +136,7 @@ class Twitter extends Client\RestClient
      * Set local HTTP client as distinct from the static HTTP client
      * as inherited from Zend_Rest_Client.
      *
-     * @param Zend\Http\Client $client
+     * @param Http\Client $client
      * @return self
      */
     public function setLocalHttpClient(Http\Client $client)
@@ -271,7 +271,7 @@ class Twitter extends Client\RestClient
     /**
      * Public Timeline status
      *
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function statusPublicTimeline()
@@ -292,7 +292,7 @@ class Twitter extends Client\RestClient
      * - page: return page X of results
      *
      * @param  array $params
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function statusFriendsTimeline(array $params = array())
@@ -339,7 +339,7 @@ class Twitter extends Client\RestClient
      * - user_id: specfies the ID of the user for whom to return the user_timeline
      * - screen_name: specfies the screen name of the user for whom to return the user_timeline
      *
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function statusUserTimeline(array $params = array())
@@ -389,7 +389,7 @@ class Twitter extends Client\RestClient
      * Show a single status
      *
      * @param  int $id Id of status to show
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function statusShow($id)
@@ -406,7 +406,7 @@ class Twitter extends Client\RestClient
      * @param  string $status
      * @param  int $in_reply_to_status_id
      * @return Client\Result
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\OutOfRangeException if message is too long
      * @throws Exception\InvalidArgumentException if message is empty
      */
@@ -441,7 +441,7 @@ class Twitter extends Client\RestClient
      * - since_id: return results only after the specified tweet id
      * - page: return page X of results
      *
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function statusReplies(array $params = array())
@@ -469,7 +469,7 @@ class Twitter extends Client\RestClient
      * Destroy a status message
      *
      * @param  int $id ID of status to destroy
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function statusDestroy($id)
@@ -484,7 +484,7 @@ class Twitter extends Client\RestClient
      * User friends
      *
      * @param  int|string $id Id or username of user for whom to fetch friends
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function userFriends(array $params = array())
@@ -515,7 +515,7 @@ class Twitter extends Client\RestClient
      * User Followers
      *
      * @param  bool $lite If true, prevents inline inclusion of current status for followers; defaults to false
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function userFollowers($lite = false)
@@ -533,7 +533,7 @@ class Twitter extends Client\RestClient
      * Show extended information on a user
      *
      * @param  int|string $id User ID or name
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function userShow($id)
@@ -552,7 +552,7 @@ class Twitter extends Client\RestClient
      * - page: return page X of results
      *
      * @param  array $params
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function directMessageMessages(array $params = array())
@@ -584,7 +584,7 @@ class Twitter extends Client\RestClient
      * - page: return page X of results
      *
      * @param  array $params
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function directMessageSent(array $params = array())
@@ -616,7 +616,7 @@ class Twitter extends Client\RestClient
      * @return Client\Result
      * @throws Exception\InvalidArgumentException if message is empty
      * @throws Exception\OutOfRangeException if message is too long
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      */
     public function directMessageNew($user, $text)
     {
@@ -641,7 +641,7 @@ class Twitter extends Client\RestClient
      * Destroy a direct message
      *
      * @param  int $id ID of message to destroy
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function directMessageDestroy($id)
@@ -656,7 +656,7 @@ class Twitter extends Client\RestClient
      * Create friendship
      *
      * @param  int|string $id User ID or name of new friend
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function friendshipCreate($id)
@@ -671,7 +671,7 @@ class Twitter extends Client\RestClient
      * Destroy friendship
      *
      * @param  int|string $id User ID or name of friend to remove
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function friendshipDestroy($id)
@@ -686,7 +686,7 @@ class Twitter extends Client\RestClient
      * Friendship exists
      *
      * @param int|string $id User ID or name of friend to see if they are your friend
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function friendshipExists($id)
@@ -700,7 +700,7 @@ class Twitter extends Client\RestClient
 
     /**
      * Verify Account Credentials
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function accountVerifyCredentials()
@@ -713,7 +713,7 @@ class Twitter extends Client\RestClient
     /**
      * End current session
      *
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return true
      */
     public function accountEndSession()
@@ -726,7 +726,7 @@ class Twitter extends Client\RestClient
     /**
      * Returns the number of api requests you have left per hour.
      *
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function accountRateLimitStatus()
@@ -744,7 +744,7 @@ class Twitter extends Client\RestClient
      * - 'page': Retrieve a different page of resuls
      *
      * @param  array $params
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function favoriteFavorites(array $params = array())
@@ -773,7 +773,7 @@ class Twitter extends Client\RestClient
      * Mark a status as a favorite
      *
      * @param  int $id Status ID you want to mark as a favorite
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function favoriteCreate($id)
@@ -788,7 +788,7 @@ class Twitter extends Client\RestClient
      * Remove a favorite
      *
      * @param  int $id Status ID you want to de-list as a favorite
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return Client\Result
      */
     public function favoriteDestroy($id)
@@ -889,7 +889,7 @@ class Twitter extends Client\RestClient
     /**
      * Protected function to validate that the integer is valid or return a 0
      * @param $int
-     * @throws Http\Client\Exception if HTTP request fails or times out
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @return integer
      */
     protected function validInteger($int)
@@ -955,7 +955,7 @@ class Twitter extends Client\RestClient
      *
      * @param string $path
      * @param array  $query Array of GET parameters
-     * @throws Http\Client\Exception
+     * @throws Http\Client\Exception\ExceptionInterface
      * @return Http\Response
      */
     protected function get($path, array $query = array())
@@ -973,7 +973,7 @@ class Twitter extends Client\RestClient
      *
      * @param string $path
      * @param mixed $data Raw data to send
-     * @throws Http\Client\Exception
+     * @throws Http\Client\Exception\ExceptionInterface
      * @return Http\Response
      */
     protected function post($path, $data = null)
