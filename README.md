@@ -1,4 +1,6 @@
-ZendService\Twitter component
+### ZendService\Twitter component
+
+Master: [![Build Status](https://secure.travis-ci.org/zendframework/ZendService_Twitter.png?branch=master)](http://travis-ci.org/zendframework/ZendService_Twitter)
 
 You can install using:
 
