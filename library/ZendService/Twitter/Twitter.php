@@ -38,7 +38,7 @@ class Twitter extends Client\RestClient
     /**
      * OAuth Endpoint
      */
-    const OAUTH_BASE_URI = 'http://twitter.com/oauth';
+    const OAUTH_BASE_URI = 'https://api.twitter.com/oauth';
 
     /**
      * @var array
