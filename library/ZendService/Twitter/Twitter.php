@@ -668,9 +668,9 @@ class Twitter
      * - since_id: return resutls with an ID greater than (more recent than) the given ID
      * - max_id: return results with an ID less than (older than) the given ID
      * - include_entities: whether or not to include embedded entities
-     * 
+     *
      * @param  string $query
-     * @param  array $options 
+     * @param  array $options
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
@@ -1035,9 +1035,9 @@ class Twitter
      * - page: the page of results to retrieve
      * - count: the number of users to retrieve per page; max is 20
      * - include_entities: if set to boolean true, include embedded entities
-     * 
+     *
      * @param  string $query
-     * @param  array $options 
+     * @param  array $options
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
@@ -1235,9 +1235,9 @@ class Twitter
      *
      * Determines if $id is an integer, and, if so, sets the "user_id" parameter.
      * If not, assumes the $id is the "screen_name".
-     * 
-     * @param  int|string $id 
-     * @param  array $params 
+     *
+     * @param  int|string $id
+     * @param  array $params
      * @return array
      */
     protected function createUserParameter($id, array $params)

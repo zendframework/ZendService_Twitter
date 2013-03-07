@@ -239,7 +239,7 @@
         "in_reply_to_user_id_str": null,
         "entities": {
             "hashtags": [ ],
-            "urls": [ 
+            "urls": [
                 {
                     "url": "http://www.sertaocentral.com.br",
                     "indices": [
@@ -459,7 +459,7 @@
         "in_reply_to_user_id": null,
         "in_reply_to_user_id_str": null,
         "entities": {
-            "hashtags": [ 
+            "hashtags": [
                 {
                     "text": "euja_",
                     "indices": [
@@ -539,7 +539,7 @@
         "in_reply_to_user_id_str": null,
         "entities": {
             "hashtags": [ ],
-            "urls": [ 
+            "urls": [
                 {
                     "url": "http://www.techno.vc/",
                     "indices": [

@@ -59,7 +59,6 @@ The following is a list of Twitter API methods not yet implemented:
 - saved_searches/destroy/:id
 - saved_searches/list
 - saved_searches/show/:id
-- search/tweets
 - site
 - statuses/filter
 - statuses/firehose
@@ -77,7 +76,6 @@ The following is a list of Twitter API methods not yet implemented:
 - users/lookup
 - users/profile_banner
 - users/report_spam
-- users/search
 - users/suggestions
 - users/suggestions/:slug
 - users/suggestions/:slug/members
