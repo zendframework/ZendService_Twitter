@@ -426,8 +426,9 @@ class Twitter
     /**
      * Update user's current status
      *
+     * @todo   Support additional parameters supported by statuses/update endpoint
      * @param  string $status
-     * @param  int $in_reply_to_status_id
+     * @param  null|int $inReplyToStatusId
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\OutOfRangeException if message is too long
      * @throws Exception\InvalidArgumentException if message is empty
@@ -450,11 +451,13 @@ class Twitter
                 'Status must contain at least one character'
             );
         }
-        $data = array('status' => $status);
-        if (is_numeric($inReplyToStatusId) && !empty($inReplyToStatusId)) {
-            $data['in_reply_to_status_id'] = $inReplyToStatusId;
+
+        $params = array('status' => $status);
+        $inReplyToStatusId = $this->validInteger($inReplyToStatusId);
+        if ($inReplyToStatusId) {
+            $params['in_reply_to_status_id'] = $inReplyToStatusId;
         }
-        $response = $this->post($path, $data);
+        $response = $this->post($path, $params);
         return new Response($response);
     }
 
@@ -548,66 +551,90 @@ class Twitter
     /**
      * Retrieve direct messages for the current user
      *
-     * $params may include one or more of the following keys
+     * $options may include one or more of the following keys
+     * - count: return page X of results
      * - since_id: return statuses only greater than the one specified
-     * - page: return page X of results
+     * - max_id: return statuses with an ID less than (older than) or equal to that specified
+     * - include_entities: setting to false will disable embedded entities
+     * - skip_status:setting to true, "t", or 1 will omit the status in returned users
      *
-     * @param  array $params
+     * @param  array $options
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function directMessageMessages(array $params = array())
+    public function directMessageMessages(array $options = array())
     {
         $this->init();
-        $path = 'direct_messages';
-        $_params = array();
-        foreach ($params as $key => $value) {
+        $path   = 'direct_messages';
+        $params = array();
+        foreach ($options as $key => $value) {
             switch (strtolower($key)) {
-                case 'since_id':
-                    $_params['since_id'] = $this->validInteger($value);
+                case 'count':
+                    $params['count'] = (int) $value;
                     break;
-                case 'page':
-                    $_params['page'] = (int) $value;
+                case 'since_id':
+                    $params['since_id'] = $this->validInteger($value);
+                    break;
+                case 'max_id':
+                    $params['max_id'] = $this->validInteger($value);
+                    break;
+                case 'include_entities':
+                    $params['include_entities'] = (bool) $value;
+                    break;
+                case 'skip_status':
+                    $params['skip_status'] = (bool) $value;
                     break;
                 default:
                     break;
             }
         }
-        $response = $this->get($path, $_params);
+        $response = $this->get($path, $params);
         return new Response($response);
     }
 
     /**
      * Retrieve list of direct messages sent by current user
      *
-     * $params may include one or more of the following keys
+     * $options may include one or more of the following keys
+     * - count: return page X of results
+     * - page: return starting at page
      * - since_id: return statuses only greater than the one specified
-     * - page: return page X of results
+     * - max_id: return statuses with an ID less than (older than) or equal to that specified
+     * - include_entities: setting to false will disable embedded entities
      *
-     * @param  array $params
+     * @param  array $options
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function directMessageSent(array $params = array())
+    public function directMessageSent(array $options = array())
     {
         $this->init();
-        $path = 'direct_messages/sent';
-        $_params = array();
-        foreach ($params as $key => $value) {
+        $path   = 'direct_messages/sent';
+        $params = array();
+        foreach ($options as $key => $value) {
             switch (strtolower($key)) {
-                case 'since_id':
-                    $_params['since_id'] = $this->validInteger($value);
+                case 'count':
+                    $params['count'] = (int) $value;
                     break;
                 case 'page':
-                    $_params['page'] = (int) $value;
+                    $params['page'] = (int) $value;
+                    break;
+                case 'since_id':
+                    $params['since_id'] = $this->validInteger($value);
+                    break;
+                case 'max_id':
+                    $params['max_id'] = $this->validInteger($value);
+                    break;
+                case 'include_entities':
+                    $params['include_entities'] = (bool) $value;
                     break;
                 default:
                     break;
             }
         }
-        $response = $this->get($path, $_params);
+        $response = $this->get($path, $params);
         return new Response($response);
     }
 
@@ -626,6 +653,7 @@ class Twitter
     {
         $this->init();
         $path = 'direct_messages/new';
+
         $len = iconv_strlen($text, 'UTF-8');
         if (0 == $len) {
             throw new Exception\InvalidArgumentException(
@@ -636,8 +664,10 @@ class Twitter
                 'Direct message must contain no more than 140 characters'
             );
         }
-        $data = array('user' => $user, 'text' => $text);
-        $response = $this->post($path, $data);
+
+        $params         = $this->createUserParameter($user, array());
+        $params['text'] = $text;
+        $response       = $this->post($path, $params);
         return new Response($response);
     }
 
@@ -652,8 +682,9 @@ class Twitter
     public function directMessageDestroy($id)
     {
         $this->init();
-        $path = 'direct_messages/destroy/' . $this->validInteger($id);
-        $response = $this->post($path);
+        $path     = 'direct_messages/destroy';
+        $params   = array('id' => $this->validInteger($id));
+        $response = $this->post($path, $params);
         return new Response($response);
     }
 
@@ -715,6 +746,7 @@ class Twitter
     /**
      * Returns the number of api requests you have left per hour.
      *
+     * @todo   Have a separate payload object to represent rate limits
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
@@ -804,7 +836,7 @@ class Twitter
     {
         $this->init();
         $path     = 'favorites/destroy';
-        $params   = $this->createUserParameter($id, array());
+        $params   = array('id' => $this->validInteger($id));
         $response = $this->post($path, $params);
         return new Response($response);
     }

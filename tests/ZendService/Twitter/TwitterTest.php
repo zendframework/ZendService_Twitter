@@ -392,7 +392,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
             'favorites/destroy.json', Http\Request::METHOD_POST, 'favorites.destroy.json',
-            array('user_id' => 15042159587)
+            array('id' => 15042159587)
         ));
         $response = $twitter->favorite->destroy(15042159587);
         $this->assertTrue($response instanceof TwitterResponse);
