@@ -80,13 +80,14 @@ class Twitter
      * @var array
      */
     protected $methodTypes = array(
+        'account',
+        'blocks',
+        'directmessages',
+        'favorites',
+        'friendships',
+        'search',
         'statuses',
         'users',
-        'directmessages',
-        'friendships',
-        'account',
-        'favorites',
-        'blocks',
     );
 
     /**
@@ -274,17 +275,374 @@ class Twitter
     }
 
     /**
-     * Public Timeline status
+     * Returns the number of api requests you have left per hour.
+     *
+     * @todo   Have a separate payload object to represent rate limits
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function accountRateLimitStatus()
+    {
+        $this->init();
+        $response = $this->get('account/rate_limit_status');
+        return new Response($response);
+    }
+
+    /**
+     * Verify Account Credentials
      *
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusesSample()
+    public function accountVerifyCredentials()
     {
         $this->init();
-        $path = 'statuses/sample';
-        $response = $this->get($path);
+        $response = $this->get('account/verify_credentials');
+        return new Response($response);
+    }
+
+    /**
+     * Blocks the user specified in the ID parameter as the authenticating user.
+     * Destroys a friendship to the blocked user if it exists.
+     *
+     * @param  integer|string $id       The ID or screen name of a user to block.
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function blocksCreate($id)
+    {
+        $this->init();
+        $path     = 'blocks/create';
+        $params   = $this->createUserParameter($id, array());
+        $response = $this->post($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Un-blocks the user specified in the ID parameter for the authenticating user
+     *
+     * @param  integer|string $id       The ID or screen_name of the user to un-block.
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function blocksDestroy($id)
+    {
+        $this->init();
+        $path   = 'blocks/destroy';
+        $params = $this->createUserParameter($id, array());
+        $response = $this->post($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Returns an array of user ids that the authenticating user is blocking
+     *
+     * @param  integer $cursor  Optional. Specifies the cursor position at which to begin listing ids; defaults to first "page" of results.
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function blocksIds($cursor = -1)
+    {
+        $this->init();
+        $path = 'blocks/ids';
+        $response = $this->get($path, array('cursor' => $cursor));
+        return new Response($response);
+    }
+
+    /**
+     * Returns an array of user objects that the authenticating user is blocking
+     *
+     * @param  integer $cursor  Optional. Specifies the cursor position at which to begin listing ids; defaults to first "page" of results.
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function blocksList($cursor = -1)
+    {
+        $this->init();
+        $path = 'blocks/list';
+        $response = $this->get($path, array('cursor' => $cursor));
+        return new Response($response);
+    }
+
+    /**
+     * Destroy a direct message
+     *
+     * @param  int $id ID of message to destroy
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function directMessagesDestroy($id)
+    {
+        $this->init();
+        $path     = 'direct_messages/destroy';
+        $params   = array('id' => $this->validInteger($id));
+        $response = $this->post($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Retrieve direct messages for the current user
+     *
+     * $options may include one or more of the following keys
+     * - count: return page X of results
+     * - since_id: return statuses only greater than the one specified
+     * - max_id: return statuses with an ID less than (older than) or equal to that specified
+     * - include_entities: setting to false will disable embedded entities
+     * - skip_status:setting to true, "t", or 1 will omit the status in returned users
+     *
+     * @param  array $options
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function directMessagesMessages(array $options = array())
+    {
+        $this->init();
+        $path   = 'direct_messages';
+        $params = array();
+        foreach ($options as $key => $value) {
+            switch (strtolower($key)) {
+                case 'count':
+                    $params['count'] = (int) $value;
+                    break;
+                case 'since_id':
+                    $params['since_id'] = $this->validInteger($value);
+                    break;
+                case 'max_id':
+                    $params['max_id'] = $this->validInteger($value);
+                    break;
+                case 'include_entities':
+                    $params['include_entities'] = (bool) $value;
+                    break;
+                case 'skip_status':
+                    $params['skip_status'] = (bool) $value;
+                    break;
+                default:
+                    break;
+            }
+        }
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Send a direct message to a user
+     *
+     * @param  int|string $user User to whom to send message
+     * @param  string $text Message to send to user
+     * @throws Exception\InvalidArgumentException if message is empty
+     * @throws Exception\OutOfRangeException if message is too long
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function directMessagesNew($user, $text)
+    {
+        $this->init();
+        $path = 'direct_messages/new';
+
+        $len = iconv_strlen($text, 'UTF-8');
+        if (0 == $len) {
+            throw new Exception\InvalidArgumentException(
+                'Direct message must contain at least one character'
+            );
+        } elseif (140 < $len) {
+            throw new Exception\OutOfRangeException(
+                'Direct message must contain no more than 140 characters'
+            );
+        }
+
+        $params         = $this->createUserParameter($user, array());
+        $params['text'] = $text;
+        $response       = $this->post($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Retrieve list of direct messages sent by current user
+     *
+     * $options may include one or more of the following keys
+     * - count: return page X of results
+     * - page: return starting at page
+     * - since_id: return statuses only greater than the one specified
+     * - max_id: return statuses with an ID less than (older than) or equal to that specified
+     * - include_entities: setting to false will disable embedded entities
+     *
+     * @param  array $options
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function directMessagesSent(array $options = array())
+    {
+        $this->init();
+        $path   = 'direct_messages/sent';
+        $params = array();
+        foreach ($options as $key => $value) {
+            switch (strtolower($key)) {
+                case 'count':
+                    $params['count'] = (int) $value;
+                    break;
+                case 'page':
+                    $params['page'] = (int) $value;
+                    break;
+                case 'since_id':
+                    $params['since_id'] = $this->validInteger($value);
+                    break;
+                case 'max_id':
+                    $params['max_id'] = $this->validInteger($value);
+                    break;
+                case 'include_entities':
+                    $params['include_entities'] = (bool) $value;
+                    break;
+                default:
+                    break;
+            }
+        }
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Mark a status as a favorite
+     *
+     * @param  int $id Status ID you want to mark as a favorite
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function favoritesCreate($id)
+    {
+        $this->init();
+        $path     = 'favorites/create';
+        $params   = array('id' => $this->validInteger($id));
+        $response = $this->post($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Remove a favorite
+     *
+     * @param  int $id Status ID you want to de-list as a favorite
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function favoritesDestroy($id)
+    {
+        $this->init();
+        $path     = 'favorites/destroy';
+        $params   = array('id' => $this->validInteger($id));
+        $response = $this->post($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Fetch favorites
+     *
+     * $options may contain one or more of the following:
+     * - user_id: Id of a user for whom to fetch favorites
+     * - screen_name: Screen name of a user for whom to fetch favorites
+     * - count: number of tweets to attempt to retrieve, up to 200
+     * - since_id: return results only after the specified tweet id
+     * - max_id: return results with an ID less than (older than) or equal to the specified ID
+     * - include_entities: when set to false, entities member will be omitted
+     *
+     * @param  array $params
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function favoritesList(array $options = array())
+    {
+        $this->init();
+        $path = 'favorites/list';
+        $params = array();
+        foreach ($options as $key => $value) {
+            switch (strtolower($key)) {
+                case 'user_id':
+                    $params['user_id'] = $this->validInteger($value);
+                    break;
+                case 'screen_name':
+                    $params['screen_name'] = $value;
+                    break;
+                case 'count':
+                    $params['count'] = (int) $value;
+                    break;
+                case 'since_id':
+                    $params['since_id'] = $this->validInteger($value);
+                    break;
+                case 'max_id':
+                    $params['max_id'] = $this->validInteger($value);
+                    break;
+                case 'include_entities':
+                    $params['include_entities'] = (bool) $value;
+                    break;
+                default:
+                    break;
+            }
+        }
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Create friendship
+     *
+     * @param  int|string $id User ID or name of new friend
+     * @param  array $params Additional parameters to pass
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function friendshipsCreate($id, array $params = array())
+    {
+        $this->init();
+        $path    = 'friendships/create';
+        $params  = $this->createUserParameter($id, $params);
+        $allowed = array(
+            'user_id'     => null,
+            'screen_name' => null,
+            'follow'      => null,
+        );
+        $params = array_intersect_key($params, $allowed);
+        $response = $this->post($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Destroy friendship
+     *
+     * @param  int|string $id User ID or name of friend to remove
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function friendshipsDestroy($id)
+    {
+        $this->init();
+        $path     = 'friendships/destroy';
+        $params   = $this->createUserParameter($id, array());
+        $response = $this->post($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Destroy a status message
+     *
+     * @param  int $id ID of status to destroy
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function statusesDestroy($id)
+    {
+        $this->init();
+        $path = 'statuses/destroy/' . $this->validInteger($id);
+        $response = $this->post($path);
         return new Response($response);
     }
 
@@ -343,6 +701,129 @@ class Twitter
             }
         }
         $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Get status replies
+     *
+     * $options may include one or more of the following keys
+     * - count: number of tweets to attempt to retrieve, up to 200
+     * - since_id: return results only after the specified tweet id
+     * - max_id: return results with an ID less than (older than) or equal to the specified ID
+     * - trim_user: when set to true, "t", or 1, user object in tweets will include only author's ID.
+     * - contributor_details: when set to true, includes screen_name of each contributor
+     * - include_entities: when set to false, entities member will be omitted
+     *
+     * @param  array $options
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function statusesMentionsTimeline(array $options = array())
+    {
+        $this->init();
+        $path   = 'statuses/mentions_timeline';
+        $params = array();
+        foreach ($options as $key => $value) {
+            switch (strtolower($key)) {
+                case 'count':
+                    $params['count'] = (int) $value;
+                    break;
+                case 'since_id':
+                    $params['since_id'] = $this->validInteger($value);
+                    break;
+                case 'max_id':
+                    $params['max_id'] = $this->validInteger($value);
+                    break;
+                case 'trim_user':
+                    if (in_array($value, array(true, 'true', 't', 1, '1'))) {
+                        $value = true;
+                    } else {
+                        $value = false;
+                    }
+                    $params['trim_user'] = $value;
+                    break;
+                case 'contributor_details:':
+                    $params['contributor_details:'] = (bool) $value;
+                    break;
+                case 'include_entities':
+                    $params['include_entities'] = (bool) $value;
+                    break;
+                default:
+                    break;
+            }
+        }
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Public Timeline status
+     *
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function statusesSample()
+    {
+        $this->init();
+        $path = 'statuses/sample';
+        $response = $this->get($path);
+        return new Response($response);
+    }
+
+    /**
+     * Show a single status
+     *
+     * @param  int $id Id of status to show
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function statusesShow($id)
+    {
+        $this->init();
+        $path = 'statuses/show/' . $this->validInteger($id);
+        $response = $this->get($path);
+        return new Response($response);
+    }
+
+    /**
+     * Update user's current status
+     *
+     * @todo   Support additional parameters supported by statuses/update endpoint
+     * @param  string $status
+     * @param  null|int $inReplyToStatusId
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\OutOfRangeException if message is too long
+     * @throws Exception\InvalidArgumentException if message is empty
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function statusesUpdate($status, $inReplyToStatusId = null)
+    {
+        $this->init();
+        $path = 'statuses/update';
+        $len = iconv_strlen(htmlspecialchars($status, ENT_QUOTES, 'UTF-8'), 'UTF-8');
+        if ($len > self::STATUS_MAX_CHARACTERS) {
+            throw new Exception\OutOfRangeException(
+                'Status must be no more than '
+                . self::STATUS_MAX_CHARACTERS
+                . ' characters in length'
+            );
+        } elseif (0 == $len) {
+            throw new Exception\InvalidArgumentException(
+                'Status must contain at least one character'
+            );
+        }
+
+        $params = array('status' => $status);
+        $inReplyToStatusId = $this->validInteger($inReplyToStatusId);
+        if ($inReplyToStatusId) {
+            $params['in_reply_to_status_id'] = $inReplyToStatusId;
+        }
+        $response = $this->post($path, $params);
         return new Response($response);
     }
 
@@ -412,130 +893,6 @@ class Twitter
     }
 
     /**
-     * Show a single status
-     *
-     * @param  int $id Id of status to show
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function statusesShow($id)
-    {
-        $this->init();
-        $path = 'statuses/show/' . $this->validInteger($id);
-        $response = $this->get($path);
-        return new Response($response);
-    }
-
-    /**
-     * Update user's current status
-     *
-     * @todo   Support additional parameters supported by statuses/update endpoint
-     * @param  string $status
-     * @param  null|int $inReplyToStatusId
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\OutOfRangeException if message is too long
-     * @throws Exception\InvalidArgumentException if message is empty
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function statusesUpdate($status, $inReplyToStatusId = null)
-    {
-        $this->init();
-        $path = 'statuses/update';
-        $len = iconv_strlen(htmlspecialchars($status, ENT_QUOTES, 'UTF-8'), 'UTF-8');
-        if ($len > self::STATUS_MAX_CHARACTERS) {
-            throw new Exception\OutOfRangeException(
-                'Status must be no more than '
-                . self::STATUS_MAX_CHARACTERS
-                . ' characters in length'
-            );
-        } elseif (0 == $len) {
-            throw new Exception\InvalidArgumentException(
-                'Status must contain at least one character'
-            );
-        }
-
-        $params = array('status' => $status);
-        $inReplyToStatusId = $this->validInteger($inReplyToStatusId);
-        if ($inReplyToStatusId) {
-            $params['in_reply_to_status_id'] = $inReplyToStatusId;
-        }
-        $response = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Get status replies
-     *
-     * $options may include one or more of the following keys
-     * - count: number of tweets to attempt to retrieve, up to 200
-     * - since_id: return results only after the specified tweet id
-     * - max_id: return results with an ID less than (older than) or equal to the specified ID
-     * - trim_user: when set to true, "t", or 1, user object in tweets will include only author's ID.
-     * - contributor_details: when set to true, includes screen_name of each contributor
-     * - include_entities: when set to false, entities member will be omitted
-     *
-     * @param  array $options
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function statusesMentionsTimeline(array $options = array())
-    {
-        $this->init();
-        $path   = 'statuses/mentions_timeline';
-        $params = array();
-        foreach ($options as $key => $value) {
-            switch (strtolower($key)) {
-                case 'count':
-                    $params['count'] = (int) $value;
-                    break;
-                case 'since_id':
-                    $params['since_id'] = $this->validInteger($value);
-                    break;
-                case 'max_id':
-                    $params['max_id'] = $this->validInteger($value);
-                    break;
-                case 'trim_user':
-                    if (in_array($value, array(true, 'true', 't', 1, '1'))) {
-                        $value = true;
-                    } else {
-                        $value = false;
-                    }
-                    $params['trim_user'] = $value;
-                    break;
-                case 'contributor_details:':
-                    $params['contributor_details:'] = (bool) $value;
-                    break;
-                case 'include_entities':
-                    $params['include_entities'] = (bool) $value;
-                    break;
-                default:
-                    break;
-            }
-        }
-        $response = $this->get($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Destroy a status message
-     *
-     * @param  int $id ID of status to destroy
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function statusesDestroy($id)
-    {
-        $this->init();
-        $path = 'statuses/destroy/' . $this->validInteger($id);
-        $response = $this->post($path);
-        return new Response($response);
-    }
-
-    /**
      * Show extended information on a user
      *
      * @param  int|string $id User ID or name
@@ -549,362 +906,6 @@ class Twitter
         $path     = 'users/show';
         $params   = $this->createUserParameter($id, array());
         $response = $this->get($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Retrieve direct messages for the current user
-     *
-     * $options may include one or more of the following keys
-     * - count: return page X of results
-     * - since_id: return statuses only greater than the one specified
-     * - max_id: return statuses with an ID less than (older than) or equal to that specified
-     * - include_entities: setting to false will disable embedded entities
-     * - skip_status:setting to true, "t", or 1 will omit the status in returned users
-     *
-     * @param  array $options
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function directMessagesMessages(array $options = array())
-    {
-        $this->init();
-        $path   = 'direct_messages';
-        $params = array();
-        foreach ($options as $key => $value) {
-            switch (strtolower($key)) {
-                case 'count':
-                    $params['count'] = (int) $value;
-                    break;
-                case 'since_id':
-                    $params['since_id'] = $this->validInteger($value);
-                    break;
-                case 'max_id':
-                    $params['max_id'] = $this->validInteger($value);
-                    break;
-                case 'include_entities':
-                    $params['include_entities'] = (bool) $value;
-                    break;
-                case 'skip_status':
-                    $params['skip_status'] = (bool) $value;
-                    break;
-                default:
-                    break;
-            }
-        }
-        $response = $this->get($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Retrieve list of direct messages sent by current user
-     *
-     * $options may include one or more of the following keys
-     * - count: return page X of results
-     * - page: return starting at page
-     * - since_id: return statuses only greater than the one specified
-     * - max_id: return statuses with an ID less than (older than) or equal to that specified
-     * - include_entities: setting to false will disable embedded entities
-     *
-     * @param  array $options
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function directMessagesSent(array $options = array())
-    {
-        $this->init();
-        $path   = 'direct_messages/sent';
-        $params = array();
-        foreach ($options as $key => $value) {
-            switch (strtolower($key)) {
-                case 'count':
-                    $params['count'] = (int) $value;
-                    break;
-                case 'page':
-                    $params['page'] = (int) $value;
-                    break;
-                case 'since_id':
-                    $params['since_id'] = $this->validInteger($value);
-                    break;
-                case 'max_id':
-                    $params['max_id'] = $this->validInteger($value);
-                    break;
-                case 'include_entities':
-                    $params['include_entities'] = (bool) $value;
-                    break;
-                default:
-                    break;
-            }
-        }
-        $response = $this->get($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Send a direct message to a user
-     *
-     * @param  int|string $user User to whom to send message
-     * @param  string $text Message to send to user
-     * @throws Exception\InvalidArgumentException if message is empty
-     * @throws Exception\OutOfRangeException if message is too long
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function directMessagesNew($user, $text)
-    {
-        $this->init();
-        $path = 'direct_messages/new';
-
-        $len = iconv_strlen($text, 'UTF-8');
-        if (0 == $len) {
-            throw new Exception\InvalidArgumentException(
-                'Direct message must contain at least one character'
-            );
-        } elseif (140 < $len) {
-            throw new Exception\OutOfRangeException(
-                'Direct message must contain no more than 140 characters'
-            );
-        }
-
-        $params         = $this->createUserParameter($user, array());
-        $params['text'] = $text;
-        $response       = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Destroy a direct message
-     *
-     * @param  int $id ID of message to destroy
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function directMessagesDestroy($id)
-    {
-        $this->init();
-        $path     = 'direct_messages/destroy';
-        $params   = array('id' => $this->validInteger($id));
-        $response = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Create friendship
-     *
-     * @param  int|string $id User ID or name of new friend
-     * @param  array $params Additional parameters to pass
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function friendshipsCreate($id, array $params = array())
-    {
-        $this->init();
-        $path    = 'friendships/create';
-        $params  = $this->createUserParameter($id, $params);
-        $allowed = array(
-            'user_id'     => null,
-            'screen_name' => null,
-            'follow'      => null,
-        );
-        $params = array_intersect_key($params, $allowed);
-        $response = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Destroy friendship
-     *
-     * @param  int|string $id User ID or name of friend to remove
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function friendshipsDestroy($id)
-    {
-        $this->init();
-        $path     = 'friendships/destroy';
-        $params   = $this->createUserParameter($id, array());
-        $response = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Verify Account Credentials
-     *
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function accountVerifyCredentials()
-    {
-        $this->init();
-        $response = $this->get('account/verify_credentials');
-        return new Response($response);
-    }
-
-    /**
-     * Returns the number of api requests you have left per hour.
-     *
-     * @todo   Have a separate payload object to represent rate limits
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function accountRateLimitStatus()
-    {
-        $this->init();
-        $response = $this->get('account/rate_limit_status');
-        return new Response($response);
-    }
-
-    /**
-     * Fetch favorites
-     *
-     * $options may contain one or more of the following:
-     * - user_id: Id of a user for whom to fetch favorites
-     * - screen_name: Screen name of a user for whom to fetch favorites
-     * - count: number of tweets to attempt to retrieve, up to 200
-     * - since_id: return results only after the specified tweet id
-     * - max_id: return results with an ID less than (older than) or equal to the specified ID
-     * - include_entities: when set to false, entities member will be omitted
-     *
-     * @param  array $params
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function favoritesList(array $options = array())
-    {
-        $this->init();
-        $path = 'favorites/list';
-        $params = array();
-        foreach ($options as $key => $value) {
-            switch (strtolower($key)) {
-                case 'user_id':
-                    $params['user_id'] = $this->validInteger($value);
-                    break;
-                case 'screen_name':
-                    $params['screen_name'] = $value;
-                    break;
-                case 'count':
-                    $params['count'] = (int) $value;
-                    break;
-                case 'since_id':
-                    $params['since_id'] = $this->validInteger($value);
-                    break;
-                case 'max_id':
-                    $params['max_id'] = $this->validInteger($value);
-                    break;
-                case 'include_entities':
-                    $params['include_entities'] = (bool) $value;
-                    break;
-                default:
-                    break;
-            }
-        }
-        $response = $this->get($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Mark a status as a favorite
-     *
-     * @param  int $id Status ID you want to mark as a favorite
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function favoritesCreate($id)
-    {
-        $this->init();
-        $path     = 'favorites/create';
-        $params   = array('id' => $this->validInteger($id));
-        $response = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Remove a favorite
-     *
-     * @param  int $id Status ID you want to de-list as a favorite
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function favoritesDestroy($id)
-    {
-        $this->init();
-        $path     = 'favorites/destroy';
-        $params   = array('id' => $this->validInteger($id));
-        $response = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Blocks the user specified in the ID parameter as the authenticating user.
-     * Destroys a friendship to the blocked user if it exists.
-     *
-     * @param  integer|string $id       The ID or screen name of a user to block.
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function blocksCreate($id)
-    {
-        $this->init();
-        $path     = 'blocks/create';
-        $params   = $this->createUserParameter($id, array());
-        $response = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Un-blocks the user specified in the ID parameter for the authenticating user
-     *
-     * @param  integer|string $id       The ID or screen_name of the user to un-block.
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function blocksDestroy($id)
-    {
-        $this->init();
-        $path   = 'blocks/destroy';
-        $params = $this->createUserParameter($id, array());
-        $response = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Returns an array of user ids that the authenticating user is blocking
-     *
-     * @param  integer $cursor  Optional. Specifies the cursor position at which to begin listing ids; defaults to first "page" of results.
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function blocksIds($cursor = -1)
-    {
-        $this->init();
-        $path = 'blocks/ids';
-        $response = $this->get($path, array('cursor' => $cursor));
-        return new Response($response);
-    }
-
-    /**
-     * Returns an array of user objects that the authenticating user is blocking
-     *
-     * @param  integer $cursor  Optional. Specifies the cursor position at which to begin listing ids; defaults to first "page" of results.
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function blocksList($cursor = -1)
-    {
-        $this->init();
-        $path = 'blocks/list';
-        $response = $this->get($path, array('cursor' => $cursor));
         return new Response($response);
     }
 
