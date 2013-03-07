@@ -529,56 +529,6 @@ class Twitter
     }
 
     /**
-     * User friends
-     *
-     * @param  int|string $id Id or username of user for whom to fetch friends
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function userFriends(array $params = array())
-    {
-        $this->init();
-        $path = 'statuses/friends';
-        $_params = array();
-
-        foreach ($params as $key => $value) {
-            switch (strtolower($key)) {
-                case 'id':
-                    $path .= '/' . $value;
-                    break;
-                case 'page':
-                    $_params['page'] = (int) $value;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        $response = $this->get($path, $_params);
-        return new Response($response);
-    }
-
-    /**
-     * User Followers
-     *
-     * @param  bool $lite If true, prevents inline inclusion of current status for followers; defaults to false
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function userFollowers($lite = false)
-    {
-        $this->init();
-        $path = 'statuses/followers';
-        if ($lite) {
-            $this->lite = 'true';
-        }
-        $response = $this->get($path);
-        return new Response($response);
-    }
-
-    /**
      * Show extended information on a user
      *
      * @param  int|string $id User ID or name
@@ -745,23 +695,6 @@ class Twitter
         $path     = 'friendships/destroy';
         $params   = $this->createUserParameter($id, array());
         $response = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Friendship exists
-     *
-     * @param int|string $id User ID or name of friend to see if they are your friend
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function friendshipExists($id)
-    {
-        $this->init();
-        $path = 'friendships/exists';
-        $data = array('user_a' => $this->getUsername(), 'user_b' => $id);
-        $response = $this->get($path, $data);
         return new Response($response);
     }
 

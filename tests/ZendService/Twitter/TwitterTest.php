@@ -303,25 +303,6 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
-    /**
-     * TODO: Mismatched behaviour from API. Per the API this can assert the
-     * existence of a friendship between any two users (not just the current
-     * user). We should expand the method or add a better fit method for
-     * general use.
-     *
-     * @todo Remove, as API endpoint no longer exists
-     */
-    public function testFriendshipExists()
-    {
-        $twitter = new Twitter\Twitter(array('username'=>'padraicb'));
-        $twitter->setHttpClient($this->stubTwitter(
-            'friendships/exists.json', Http\Request::METHOD_GET, 'friendships.exists.twitter.json',
-            array('user_a'=>'padraicb', 'user_b'=>'twitter')
-        ));
-        $response = $twitter->friendship->exists('twitter');
-        $this->assertTrue($response instanceof TwitterResponse);
-    }
-
     public function testHomeTimelineWithCountReturnsResults()
     {
         $twitter = new Twitter\Twitter;
@@ -427,32 +408,13 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
-    /**
-     * TODO: Add verification for ALL optional parameters
-     * @todo Remove, as API endpoint no longer exists
-     */
-    public function testUserFriendsReturnsResults()
+    public function testStatusHomeTimelineWithNoOptionsReturnsResults()
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/friends.json', Http\Request::METHOD_GET, 'statuses.friends.json'
+            'statuses/home_timeline.json', Http\Request::METHOD_GET, 'statuses.home_timeline.page.json'
         ));
-        $response = $twitter->user->friends();
-        $this->assertTrue($response instanceof TwitterResponse);
-    }
-
-    /**
-     * TODO: Add verification for ALL optional parameters
-     * Note: Implementation does not currently accept ANY optional parameters
-     * @todo Remove, as API endpoint no longer exists
-     */
-    public function testUserFollowersReturnsResults()
-    {
-        $twitter = new Twitter\Twitter;
-        $twitter->setHttpClient($this->stubTwitter(
-            'statuses/followers.json', Http\Request::METHOD_GET, 'statuses.followers.json'
-        ));
-        $response = $twitter->user->followers();
+        $response = $twitter->status->homeTimeline();
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
