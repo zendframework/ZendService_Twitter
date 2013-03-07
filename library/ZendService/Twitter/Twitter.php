@@ -631,6 +631,117 @@ class Twitter
     }
 
     /**
+     * Search tweets
+     *
+     * $options may include any of the following:
+     * - geocode: a string of the form "latitude, longitude, radius"
+     * - lang: restrict tweets to the two-letter language code
+     * - locale: query is in the given two-letter language code
+     * - result_type: what type of results to receive: mixed, recent, or popular
+     * - count: number of tweets to return per page; up to 100
+     * - until: return tweets generated before the given date
+     * - since_id: return resutls with an ID greater than (more recent than) the given ID
+     * - max_id: return results with an ID less than (older than) the given ID
+     * - include_entities: whether or not to include embedded entities
+     * 
+     * @param  string $query
+     * @param  array $options 
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function searchTweets($query, array $options = array())
+    {
+        $this->init();
+        $path = 'search/tweets';
+
+        $len = iconv_strlen($query, 'UTF-8');
+        if (0 == $len) {
+            throw new Exception\InvalidArgumentException(
+                'Query must contain at least one character'
+            );
+        }
+
+        $params = array('q' => $query);
+        foreach ($options as $key => $value) {
+            switch (strtolower($key)) {
+                case 'geocode':
+                    if (!substr_count($value, ',') !== 2) {
+                        throw new Exception\InvalidArgumentException(
+                            '"geocode" must be of the format "latitude,longitude,radius"'
+                        );
+                    }
+                    list($latitude, $longitude, $radius) = explode(',', $value);
+                    $radius = trim($radius);
+                    if (!preg_match('/^\d+(mi|km)$/', $radius)) {
+                        throw new Exception\InvalidArgumentException(
+                            'Radius segment of "geocode" must be of the format "[unit](mi|km)"'
+                        );
+                    }
+                    $latitude  = (float) $latitude;
+                    $longitude = (float) $longitude;
+                    $params['geocode'] = $latitude . ',' . $longitude . ',' . $radius;
+                    break;
+                case 'lang':
+                    if (strlen($value) > 2) {
+                        throw new Exception\InvalidArgumentException(
+                            'Query language must be a 2 character string'
+                        );
+                    }
+                    $params['lang'] = strtolower($value);
+                    break;
+                case 'locale':
+                    if (strlen($value) > 2) {
+                        throw new Exception\InvalidArgumentException(
+                            'Query locale must be a 2 character string'
+                        );
+                    }
+                    $params['locale'] = strtolower($value);
+                    break;
+                case 'result_type':
+                    $value = strtolower($value);
+                    if (!in_array($value, array('mixed', 'recent', 'popular'))) {
+                        throw new Exception\InvalidArgumentException(
+                            'result_type must be one of "mixed", "recent", or "popular"'
+                        );
+                    }
+                    $params['result_type'] = $value;
+                    break;
+                case 'count':
+                    $value = (int) $value;
+                    if (1 > $value || 100 < $value) {
+                        throw new Exception\InvalidArgumentException(
+                            'count must be between 1 and 100'
+                        );
+                    }
+                    $params['count'] = $value;
+                    break;
+                case 'until':
+                    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+                        throw new Exception\InvalidArgumentException(
+                            '"until" must be a date in the format YYYY-MM-DD'
+                        );
+                    }
+                    $params['until'] = $value;
+                    break;
+                case 'since_id':
+                    $params['since_id'] = $this->validInteger($value);
+                    break;
+                case 'max_id':
+                    $params['max_id'] = $this->validInteger($value);
+                    break;
+                case 'include_entities':
+                    $params['include_entities'] = (bool) $value;
+                    break;
+                default:
+                    break;
+            }
+        }
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+    /**
      * Destroy a status message
      *
      * @param  int $id ID of status to destroy
@@ -891,6 +1002,59 @@ class Twitter
         $response = $this->get($path, $params);
         return new Response($response);
     }
+
+    /**
+     * Search users
+     *
+     * $options may include any of the following:
+     * - page: the page of results to retrieve
+     * - count: the number of users to retrieve per page; max is 20
+     * - include_entities: if set to boolean true, include embedded entities
+     * 
+     * @param  string $query
+     * @param  array $options 
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return Response
+     */
+    public function usersSearch($query, array $options = array())
+    {
+        $this->init();
+        $path = 'users/search';
+
+        $len = iconv_strlen($query, 'UTF-8');
+        if (0 == $len) {
+            throw new Exception\InvalidArgumentException(
+                'Query must contain at least one character'
+            );
+        }
+
+        $params = array('q' => $query);
+        foreach ($options as $key => $value) {
+            switch (strtolower($key)) {
+                case 'count':
+                    $value = (int) $value;
+                    if (1 > $value || 20 < $value) {
+                        throw new Exception\InvalidArgumentException(
+                            'count must be between 1 and 20'
+                        );
+                    }
+                    $params['count'] = $value;
+                    break;
+                case 'page':
+                    $params['page'] = (int) $value;
+                    break;
+                case 'include_entities':
+                    $params['include_entities'] = (bool) $value;
+                    break;
+                default:
+                    break;
+            }
+        }
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
 
     /**
      * Show extended information on a user
