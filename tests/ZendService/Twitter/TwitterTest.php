@@ -71,7 +71,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $token = $this->getMock('ZendOAuth\Token\Access', array(), array(), '', false);
         $client = $this->getMock('ZendOAuth\Client', array(), array(), '', false);
         $token->expects($this->once())->method('getHttpClient')
-            ->with(array('accessToken'=>$token, 'opt1'=>'val1', 'siteUrl'=>'https://api.twitter.com/oauth'))
+            ->with(array('token'=>$token, 'siteUrl'=>'https://api.twitter.com/oauth'))
             ->will($this->returnValue($client));
 
         $twitter = new Twitter\Twitter(array('accessToken'=>$token, 'opt1'=>'val1'));
@@ -89,7 +89,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $token = $this->getMock('ZendOAuth\Token\Access', array(), array(), '', false);
         $client = $this->getMock('ZendOAuth\Client', array(), array(), '', false);
         $token->expects($this->once())->method('getHttpClient')
-            ->with(array('accessToken'=>$token, 'siteUrl'=>'https://api.twitter.com/oauth'))
+            ->with(array('token'=>$token, 'siteUrl'=>'https://api.twitter.com/oauth'))
             ->will($this->returnValue($client));
 
         $twitter = new Twitter\Twitter(array('accessToken'=>$token));
@@ -510,5 +510,16 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter1 = new Twitter\Twitter(array('username'=>'zftestuser1'));
         $twitter2 = new Twitter\Twitter(array('username'=>'zftestuser2'));
         $this->assertFalse($twitter1->getHttpClient() === $twitter2->getHttpClient());
+    }
+
+    public function testSearchTweets()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubTwitter(
+            'search/tweets.json', Http\Request::METHOD_GET, 'search.tweets.json',
+            array('q' => '#zf2')
+        ));
+        $response = $twitter->search->tweets('#zf2');
+        $this->assertTrue($response instanceof TwitterResponse);
     }
 }

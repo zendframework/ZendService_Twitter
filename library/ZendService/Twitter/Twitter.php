@@ -120,7 +120,6 @@ class Twitter
             $options = array();
         }
 
-        $options['siteUrl'] = self::OAUTH_BASE_URI;
         $this->options = $options;
 
         if (isset($options['username'])) {
@@ -134,9 +133,33 @@ class Twitter
             $accessToken = $options['access_token'];
         }
 
+        $oauthOptions = array();
+        if (isset($options['oauthOptions'])) {
+            $oauthOptions = $options['oauthOptions'];
+        } elseif (isset($options['oauth_options'])) {
+            $oauthOptions = $options['oauth_options'];
+        }
+        $oauthOptions['siteUrl'] = static::OAUTH_BASE_URI;
+
+        $httpClientOptions = array();
+        if (isset($options['httpClientOptions'])) {
+            $httpClientOptions = $options['httpClientOptions'];
+        } elseif (isset($options['http_client_options'])) {
+            $httpClientOptions = $options['http_client_options'];
+        }
+
         // If we have an OAuth access token, use the HTTP client it provides
+        if ($accessToken && is_array($accessToken)
+            && (isset($accessToken['token']) && isset($accessToken['secret']))
+        ) {
+            $token = new OAuth\Token\Access();
+            $token->setToken($accessToken['token']);
+            $token->setTokenSecret($accessToken['secret']);
+            $accessToken = $token;
+        }
         if ($accessToken && $accessToken instanceof OAuth\Token\Access) {
-            $this->setHttpClient($accessToken->getHttpClient($options));
+            $oauthOptions['token'] = $accessToken;
+            $this->setHttpClient($accessToken->getHttpClient($oauthOptions, static::OAUTH_BASE_URI, $httpClientOptions));
             return;
         }
 
@@ -148,11 +171,13 @@ class Twitter
         }
         if ($httpClient instanceof Http\Client) {
             $this->httpClient = $httpClient;
+        } else {
+            $this->setHttpClient(new Http\Client(null, $httpClientOptions));
         }
 
         // Set the OAuth consumer
         if ($consumer === null) {
-            $consumer = new OAuth\Consumer($options);
+            $consumer = new OAuth\Consumer($oauthOptions);
         }
         $this->oauthConsumer = $consumer;
     }
