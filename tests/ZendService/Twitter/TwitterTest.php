@@ -511,15 +511,4 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter2 = new Twitter\Twitter(array('username'=>'zftestuser2'));
         $this->assertFalse($twitter1->getHttpClient() === $twitter2->getHttpClient());
     }
-
-    public function testYouCanRetrieveTheUsersWhoRetweetedATweet()
-    {
-        $twitter = new Twitter\Twitter();
-        $response = $twitter->statusRetweetedBy('85607267692584960');
-
-        $this->assertTrue($response instanceof TwitterResponse);
-        $this->assertTrue(is_array($response->name), var_export($response, 1));
-        $this->assertTrue(in_array('Alessandro Nadalin', $response->name));
-    }
-
 }

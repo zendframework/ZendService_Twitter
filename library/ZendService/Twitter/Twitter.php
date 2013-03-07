@@ -371,7 +371,7 @@ class Twitter
                     $params['user_id'] = $this->validInteger($value);
                     break;
                 case 'screen_name':
-                    $params['screen_name'] = $value;
+                    $params['screen_name'] = $this->validateScreenName($value);
                     break;
                 case 'count':
                     $params['count'] = (int) $value;
@@ -873,21 +873,6 @@ class Twitter
     }
 
     /**
-     * Returns an array of user objects that retweeted the tweets identified with the given $id
-     *
-     * @param  integer $id  The Id of the tweet we want to know who retweeted
-     * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
-     */
-    public function statusRetweetedBy($id)
-    {
-        $this->init();
-        $path = 'statuses/' . $this->validInteger($id) . '/retweeted_by';
-        $response = $this->get($path);
-        return new Response($response);
-    }
-
-    /**
      * Initialize HTTP authentication
      *
      * @return void
@@ -1033,9 +1018,10 @@ class Twitter
     {
         if ($this->validInteger($id)) {
             $params['user_id'] = $id;
-        } else {
-            $params['screen_name'] = $id;
+            return $params;
         }
+
+        $params['screen_name'] = $this->validateScreenName($id);
         return $params;
     }
 }
