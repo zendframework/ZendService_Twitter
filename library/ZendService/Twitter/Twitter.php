@@ -80,13 +80,13 @@ class Twitter
      * @var array
      */
     protected $methodTypes = array(
-        'status',
-        'user',
-        'directMessage',
-        'friendship',
+        'statuses',
+        'users',
+        'directmessages',
+        'friendships',
         'account',
-        'favorite',
-        'block',
+        'favorites',
+        'blocks',
     );
 
     /**
@@ -165,6 +165,8 @@ class Twitter
      */
     public function __get($type)
     {
+        $type = strtolower($type);
+        $type = str_replace('_', '', $type);
         if (!in_array($type, $this->methodTypes)) {
             throw new Exception\DomainException(
                 'Invalid method type "' . $type . '"'
@@ -196,7 +198,9 @@ class Twitter
                 'Invalid method "' . $method . '"'
             );
         }
-        $test = $this->methodType . $method;
+
+        $test = str_replace('_', '', strtolower($method));
+        $test = $this->methodType . $test;
         if (!method_exists($this, $test)) {
             throw new Exception\BadMethodCallException(
                 'Invalid method "' . $test . '"'
@@ -276,7 +280,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusSample()
+    public function statusesSample()
     {
         $this->init();
         $path = 'statuses/sample';
@@ -301,7 +305,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusHomeTimeline(array $options = array())
+    public function statusesHomeTimeline(array $options = array())
     {
         $this->init();
         $path = 'statuses/home_timeline';
@@ -360,7 +364,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusUserTimeline(array $options = array())
+    public function statusesUserTimeline(array $options = array())
     {
         $this->init();
         $path = 'statuses/user_timeline';
@@ -415,7 +419,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusShow($id)
+    public function statusesShow($id)
     {
         $this->init();
         $path = 'statuses/show/' . $this->validInteger($id);
@@ -435,7 +439,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusUpdate($status, $inReplyToStatusId = null)
+    public function statusesUpdate($status, $inReplyToStatusId = null)
     {
         $this->init();
         $path = 'statuses/update';
@@ -477,7 +481,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusMentions(array $options = array())
+    public function statusesMentionsTimeline(array $options = array())
     {
         $this->init();
         $path   = 'statuses/mentions_timeline';
@@ -523,7 +527,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusDestroy($id)
+    public function statusesDestroy($id)
     {
         $this->init();
         $path = 'statuses/destroy/' . $this->validInteger($id);
@@ -539,7 +543,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function userShow($id)
+    public function usersShow($id)
     {
         $this->init();
         $path     = 'users/show';
@@ -563,7 +567,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function directMessageMessages(array $options = array())
+    public function directMessagesMessages(array $options = array())
     {
         $this->init();
         $path   = 'direct_messages';
@@ -608,7 +612,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function directMessageSent(array $options = array())
+    public function directMessagesSent(array $options = array())
     {
         $this->init();
         $path   = 'direct_messages/sent';
@@ -649,7 +653,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function directMessageNew($user, $text)
+    public function directMessagesNew($user, $text)
     {
         $this->init();
         $path = 'direct_messages/new';
@@ -679,7 +683,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function directMessageDestroy($id)
+    public function directMessagesDestroy($id)
     {
         $this->init();
         $path     = 'direct_messages/destroy';
@@ -697,7 +701,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function friendshipCreate($id, array $params = array())
+    public function friendshipsCreate($id, array $params = array())
     {
         $this->init();
         $path    = 'friendships/create';
@@ -720,7 +724,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function friendshipDestroy($id)
+    public function friendshipsDestroy($id)
     {
         $this->init();
         $path     = 'friendships/destroy';
@@ -774,7 +778,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function favoriteList(array $options = array())
+    public function favoritesList(array $options = array())
     {
         $this->init();
         $path = 'favorites/list';
@@ -815,7 +819,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function favoriteCreate($id)
+    public function favoritesCreate($id)
     {
         $this->init();
         $path     = 'favorites/create';
@@ -832,7 +836,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function favoriteDestroy($id)
+    public function favoritesDestroy($id)
     {
         $this->init();
         $path     = 'favorites/destroy';
@@ -849,7 +853,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function blockCreate($id)
+    public function blocksCreate($id)
     {
         $this->init();
         $path     = 'blocks/create';
@@ -865,7 +869,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function blockDestroy($id)
+    public function blocksDestroy($id)
     {
         $this->init();
         $path   = 'blocks/destroy';
@@ -881,7 +885,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function blockIds($cursor = -1)
+    public function blocksIds($cursor = -1)
     {
         $this->init();
         $path = 'blocks/ids';
@@ -896,7 +900,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function blockList($cursor = -1)
+    public function blocksList($cursor = -1)
     {
         $this->init();
         $path = 'blocks/list';

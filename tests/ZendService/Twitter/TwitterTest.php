@@ -132,7 +132,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException('ZendService\Twitter\Exception\ExceptionInterface');
         $twitter = new Twitter\Twitter(array('username'=>'me'));
-        $twitter->statusPublicTimeline();
+        $twitter->statusesPublicTimeline();
     }
 
     /**
@@ -145,7 +145,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'users/show.json', Http\Request::METHOD_GET, 'users.show.mwop.json',
             array('screen_name' => 'mwop')
         ));
-        $response = $twitter->user->show('mwop');
+        $response = $twitter->users->show('mwop');
         $this->assertInstanceOf('ZendService\Twitter\Response', $response);
         $exists = $response->id !== null;
         $this->assertTrue($exists);
@@ -160,7 +160,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter->setHttpClient($this->stubTwitter(
             'statuses/user_timeline.json', Http\Request::METHOD_GET, 'statuses.user_timeline.mwop.json'
         ));
-        $twitter->status->userTimeline(array('screen_name' => 'mwop'));
+        $twitter->statuses->userTimeline(array('screen_name' => 'mwop'));
     }
 
     /**
@@ -170,7 +170,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException('ZendService\Twitter\Exception\ExceptionInterface');
         $twitter = new Twitter\Twitter();
-        $twitter->status->userTimeline(array('screen_name' => 'abc.def'));
+        $twitter->statuses->userTimeline(array('screen_name' => 'abc.def'));
     }
 
     /**
@@ -180,7 +180,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException('\ZendService\Twitter\Exception\ExceptionInterface');
         $twitter = new Twitter\Twitter();
-        $twitter->status->userTimeline(array('screen_name' => 'abcdef_abc123_abc123x'));
+        $twitter->statuses->userTimeline(array('screen_name' => 'abcdef_abc123_abc123x'));
     }
 
     /**
@@ -198,7 +198,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
                 'screen_name' => 'twitter'
             )
         ));
-        $twitter->status->userTimeline(array(
+        $twitter->statuses->userTimeline(array(
             'id' => '783214',
             'since' => '+2 days', /* invalid param since Apr 2009 */
             'page' => '1',
@@ -213,7 +213,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     public function testOverloadingGetShouldReturnObjectInstanceWithValidMethodType()
     {
         $twitter = new Twitter\Twitter;
-        $return = $twitter->status;
+        $return = $twitter->statuses;
         $this->assertSame($twitter, $return);
     }
 
@@ -237,14 +237,14 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter->setHttpClient($this->stubTwitter(
             'statuses/sample.json', Http\Request::METHOD_GET, 'statuses.sample.json'
         ));
-        $twitter->status->sample();
+        $twitter->statuses->sample();
     }
 
     public function testMethodProxyingThrowExceptionsWithInvalidMethods()
     {
         $this->setExpectedException('ZendService\Twitter\Exception\ExceptionInterface');
         $twitter = new Twitter\Twitter;
-        $twitter->status->foo();
+        $twitter->statuses->foo();
     }
 
     public function testVerifiedCredentials()
@@ -263,7 +263,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter->setHttpClient($this->stubTwitter(
             'statuses/sample.json', Http\Request::METHOD_GET, 'statuses.sample.json'
         ));
-        $response = $twitter->status->sample();
+        $response = $twitter->statuses->sample();
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -299,7 +299,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'friendships/create.json', Http\Request::METHOD_POST, 'friendships.create.twitter.json',
             array('screen_name' => 'twitter')
         ));
-        $response = $twitter->friendship->create('twitter');
+        $response = $twitter->friendships->create('twitter');
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -310,7 +310,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'statuses/home_timeline.json', Http\Request::METHOD_GET, 'statuses.home_timeline.page.json',
             array('count' => 3)
         ));
-        $response = $twitter->status->homeTimeline(array('count' => 3));
+        $response = $twitter->statuses->homeTimeline(array('count' => 3));
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -324,7 +324,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'statuses/user_timeline.json', Http\Request::METHOD_GET, 'statuses.user_timeline.mwop.json',
             array('screen_name' => 'mwop')
         ));
-        $response = $twitter->status->userTimeline(array('screen_name' => 'mwop'));
+        $response = $twitter->statuses->userTimeline(array('screen_name' => 'mwop'));
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -338,7 +338,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'statuses/update.json', Http\Request::METHOD_POST, 'statuses.update.json',
             array('status'=>'Test Message 1')
         ));
-        $response = $twitter->status->update('Test Message 1');
+        $response = $twitter->statuses->update('Test Message 1');
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -346,14 +346,14 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException('ZendService\Twitter\Exception\ExceptionInterface');
         $twitter = new Twitter\Twitter;
-        $twitter->status->update('Test Message - ' . str_repeat(' Hello ', 140));
+        $twitter->statuses->update('Test Message - ' . str_repeat(' Hello ', 140));
     }
 
     public function testPostStatusUpdateEmptyShouldThrowException()
     {
         $this->setExpectedException('ZendService\Twitter\Exception\ExceptionInterface');
         $twitter = new Twitter\Twitter;
-        $twitter->status->update('');
+        $twitter->statuses->update('');
     }
 
     public function testShowStatusReturnsResponse()
@@ -362,7 +362,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter->setHttpClient($this->stubTwitter(
             'statuses/show/307529814640840705.json', Http\Request::METHOD_GET, 'statuses.show.json'
         ));
-        $response = $twitter->status->show(307529814640840705);
+        $response = $twitter->statuses->show(307529814640840705);
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -373,7 +373,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'favorites/create.json', Http\Request::METHOD_POST, 'favorites.create.json',
             array('id' => 15042159587)
         ));
-        $response = $twitter->favorite->create(15042159587);
+        $response = $twitter->favorites->create(15042159587);
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -383,7 +383,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter->setHttpClient($this->stubTwitter(
             'favorites/list.json', Http\Request::METHOD_GET, 'favorites.list.json'
         ));
-        $response = $twitter->favorite->list();
+        $response = $twitter->favorites->list();
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -394,7 +394,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'favorites/destroy.json', Http\Request::METHOD_POST, 'favorites.destroy.json',
             array('id' => 15042159587)
         ));
-        $response = $twitter->favorite->destroy(15042159587);
+        $response = $twitter->favorites->destroy(15042159587);
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -404,7 +404,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter->setHttpClient($this->stubTwitter(
             'statuses/destroy/15042159587.json', Http\Request::METHOD_POST, 'statuses.destroy.json'
         ));
-        $response = $twitter->status->destroy(15042159587);
+        $response = $twitter->statuses->destroy(15042159587);
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -414,7 +414,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter->setHttpClient($this->stubTwitter(
             'statuses/home_timeline.json', Http\Request::METHOD_GET, 'statuses.home_timeline.page.json'
         ));
-        $response = $twitter->status->homeTimeline();
+        $response = $twitter->statuses->homeTimeline();
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -425,7 +425,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'users/show.json', Http\Request::METHOD_GET, 'users.show.mwop.json',
             array('screen_name' => 'mwop')
         ));
-        $response = $twitter->user->show('mwop');
+        $response = $twitter->users->show('mwop');
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -439,7 +439,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter->setHttpClient($this->stubTwitter(
             'statuses/mentions_timeline.json', Http\Request::METHOD_GET, 'statuses.mentions_timeline.json'
         ));
-        $response = $twitter->status->mentions();
+        $response = $twitter->statuses->mentionsTimeline();
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -453,7 +453,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'friendships/destroy.json', Http\Request::METHOD_POST, 'friendships.destroy.twitter.json',
             array('screen_name' => 'twitter')
         ));
-        $response = $twitter->friendship->destroy('twitter');
+        $response = $twitter->friendships->destroy('twitter');
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -464,7 +464,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'blocks/create.json', Http\Request::METHOD_POST, 'blocks.create.twitter.json',
             array('screen_name' => 'twitter')
         ));
-        $response = $twitter->block->create('twitter');
+        $response = $twitter->blocks->create('twitter');
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -475,7 +475,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'blocks/list.json', Http\Request::METHOD_GET, 'blocks.list.json',
             array('cursor' => -1)
         ));
-        $response = $twitter->block->list();
+        $response = $twitter->blocks->list();
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -486,7 +486,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'blocks/ids.json', Http\Request::METHOD_GET, 'blocks.ids.json',
             array('cursor' => -1)
         ));
-        $response = $twitter->block->ids();
+        $response = $twitter->blocks->ids();
         $this->assertTrue($response instanceof TwitterResponse);
         $this->assertContains('23836616', $response->ids);
     }
@@ -498,7 +498,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'blocks/destroy.json', Http\Request::METHOD_POST, 'blocks.destroy.twitter.json',
             array('screen_name' => 'twitter')
         ));
-        $response = $twitter->block->destroy('twitter');
+        $response = $twitter->blocks->destroy('twitter');
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
