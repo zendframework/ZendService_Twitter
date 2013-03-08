@@ -14,14 +14,43 @@ use Zend\Http\Response as HttpResponse;
 use Zend\Json\Exception\ExceptionInterface as JsonException;
 use Zend\Json\Json;
 
+/**
+ * Representation of a response from Twitter.
+ *
+ * Provides:
+ *
+ * - method for testing if we have a successful call
+ * - method for retrieving errors, if any
+ * - method for retrieving the raw JSON
+ * - method for retrieving the decoded response
+ * - proxying to elements of the decoded response via property overloading
+ */
 class Response
 {
+    /**
+     * @var HttpResponse
+     */
     protected $httpResponse;
 
+    /**
+     * @var array|\stdClass
+     */
     protected $jsonBody;
 
+    /**
+     * @var string
+     */
     protected $rawBody;
 
+    /**
+     * Constructor
+     *
+     * Assigns the HttpResponse to a property, as well as the body
+     * representation. It then attempts to decode the body as JSON.
+     *
+     * @param  HttpResponse $httpResponse
+     * @throws Exception\DomainException if unable to decode JSON response
+     */
     public function __construct(HttpResponse $httpResponse)
     {
         $this->httpResponse = $httpResponse;
@@ -37,6 +66,15 @@ class Response
         }
     }
 
+    /**
+     * Property overloading to JSON elements
+     *
+     * If a named property exists within the JSON response returned,
+     * proxies to it. Otherwise, returns null.
+     *
+     * @param  string $name
+     * @return mixed
+     */
     public function __get($name)
     {
         if (null === $this->jsonBody) {
@@ -48,16 +86,38 @@ class Response
         return $this->jsonBody->{$name};
     }
 
+    /**
+     * Was the request successful?
+     *
+     * @return bool
+     */
     public function isSuccess()
     {
         return $this->httpResponse->isSuccess();
     }
 
+    /**
+     * Did an error occur in the request?
+     *
+     * @return bool
+     */
     public function isError()
     {
         return !$this->httpResponse->isSuccess();
     }
 
+    /**
+     * Retrieve the errors.
+     *
+     * Twitter _should_ return a standard error object, which contains an
+     * "errors" property pointing to an array of errors. This method will
+     * return that array if present, and raise an exception if not detected.
+     *
+     * If the response was successful, an empty array is returned.
+     *
+     * @return array
+     * @throws Exception\DomainException if unable to detect structure of error response
+     */
     public function getErrors()
     {
         if (!$this->isError()) {
@@ -73,11 +133,21 @@ class Response
         return $this->jsonBody->errors;
     }
 
+    /**
+     * Retrieve the raw response body
+     *
+     * @return string
+     */
     public function getRawResponse()
     {
         return $this->rawBody;
     }
 
+    /**
+     * Retun the decoded response body
+     *
+     * @return array|\stdClass
+     */
     public function toValue()
     {
         return $this->jsonBody;
