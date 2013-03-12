@@ -271,9 +271,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'account/rate_limit_status.json', Http\Request::METHOD_GET, 'account.rate_limit_status.json'
+            'application/rate_limit_status.json', Http\Request::METHOD_GET, 'application.rate_limit_status.json'
         ));
-        $response = $twitter->account->rateLimitStatus();
+        $response = $twitter->application->rateLimitStatus();
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -281,9 +281,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'account/rate_limit_status.json', Http\Request::METHOD_GET, 'account.rate_limit_status.json'
+            'application/rate_limit_status.json', Http\Request::METHOD_GET, 'application.rate_limit_status.json'
         ));
-        $response = $twitter->account->rateLimitStatus();
+        $response = $twitter->application->rateLimitStatus();
         $status = $response->toValue();
         $this->assertEquals(180, $status->resources->statuses->{'/statuses/user_timeline'}->remaining);
     }
