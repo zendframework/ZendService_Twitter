@@ -43,17 +43,3 @@ defined('TESTS_ZEND_OB_ENABLED') || define('TESTS_ZEND_OB_ENABLED', false);
  */
 defined('TESTS_GENERATE_REPORT') || define('TESTS_GENERATE_REPORT', false);
 defined('TESTS_GENERATE_REPORT_TARGET') || define('TESTS_GENERATE_REPORT_TARGET', '/path/to/target');
-
-/**
- * Zend\Service\Twitter tests
- *
- * ONLINE_ENABLED indicates whether or not to run tests requiring a network
- * connection.
- *
- * TWITTER_USER and TWITTER_PASS are valid Twitter credentials you wish to use
- * when testing.
- */
-defined('TESTS_ZEND_SERVICE_TWITTER_ONLINE_ENABLED') || define('TESTS_ZEND_SERVICE_TWITTER_ONLINE_ENABLED', false);
-defined('TESTS_ZEND_SERVICE_TWITTER_USER') || define('TESTS_ZEND_SERVICE_TWITTER_USER', 'zftestuser');
-defined('TESTS_ZEND_SERVICE_TWITTER_PASS') || define('TESTS_ZEND_SERVICE_TWITTER_PASS', 'zftestuser');
-
