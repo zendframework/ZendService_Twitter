@@ -26,15 +26,15 @@
         "zendframework/zend-json": ">=2.0.0",
         "zendframework/zend-stdlib": ">=2.0.0",
         "zendframework/zend-uri": ">=2.0.0",
-        "zendframework/zendoauth": ">=2.0.0",
-        "zendframework/zendrest": ">=2.0.0"
+        "zendframework/zendoauth": ">=2.0.0"
     },
     "require-dev": {
         "zendframework/zend-config": ">=2.0.0"
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "2.0.x-dev"
+            "dev-master": "2.0.x-dev",
+            "dev-develop": "2.1.x-dev"
         }
     }
 }
