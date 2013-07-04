@@ -362,7 +362,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter->setHttpClient($this->stubTwitter(
             'statuses/show/307529814640840705.json', Http\Request::METHOD_GET, 'statuses.show.json'
         ));
-        $response = $twitter->statuses->show(307529814640840705);
+        $response = $twitter->statuses->show('307529814640840705');
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
