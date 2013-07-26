@@ -479,6 +479,52 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
+    public function testUsersShowAcceptsScreenNamesWithNumbers()
+    {
+
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient(
+            $this->stubTwitter(
+                'users/show.json',
+                Http\Request::METHOD_GET,
+                null,
+                array('screen_name' => 'JuicyBurger661')
+        ));
+        //$id as screen_name with numbers
+        $twitter->users->show('JuicyBurger661');
+    }
+
+    public function testUsersShowAcceptsIdAsStringArgument()
+    {
+
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient(
+            $this->stubTwitter(
+                'users/show.json',
+                Http\Request::METHOD_GET,
+                null,
+                array('user_id' => 137307825)
+            ));
+        //$id as string
+        $twitter->users->show('137307825');
+
+    }
+
+    public function testUsersShowAcceptsIdAsIntegerArgument()
+    {
+
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient(
+            $this->stubTwitter(
+                'users/show.json',
+                Http\Request::METHOD_GET,
+                null,
+                array('user_id' => 137307825)
+            ));
+        //$id as integer
+        $twitter->users->show(137307825);
+    }
+
     public function testBlockingIds()
     {
         $twitter = new Twitter\Twitter;
