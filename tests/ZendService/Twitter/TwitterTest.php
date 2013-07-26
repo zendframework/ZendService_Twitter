@@ -362,7 +362,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $twitter->setHttpClient($this->stubTwitter(
             'statuses/show/307529814640840705.json', Http\Request::METHOD_GET, 'statuses.show.json'
         ));
-        $response = $twitter->statuses->show(307529814640840705);
+        $response = $twitter->statuses->show('307529814640840705');
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -477,6 +477,52 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         ));
         $response = $twitter->blocks->list();
         $this->assertTrue($response instanceof TwitterResponse);
+    }
+
+    public function testUsersShowAcceptsScreenNamesWithNumbers()
+    {
+
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient(
+            $this->stubTwitter(
+                'users/show.json',
+                Http\Request::METHOD_GET,
+                null,
+                array('screen_name' => 'JuicyBurger661')
+        ));
+        //$id as screen_name with numbers
+        $twitter->users->show('JuicyBurger661');
+    }
+
+    public function testUsersShowAcceptsIdAsStringArgument()
+    {
+
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient(
+            $this->stubTwitter(
+                'users/show.json',
+                Http\Request::METHOD_GET,
+                null,
+                array('user_id' => 137307825)
+            ));
+        //$id as string
+        $twitter->users->show('137307825');
+
+    }
+
+    public function testUsersShowAcceptsIdAsIntegerArgument()
+    {
+
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient(
+            $this->stubTwitter(
+                'users/show.json',
+                Http\Request::METHOD_GET,
+                null,
+                array('user_id' => 137307825)
+            ));
+        //$id as integer
+        $twitter->users->show(137307825);
     }
 
     public function testBlockingIds()

@@ -1134,8 +1134,8 @@ class Twitter
      */
     protected function validInteger($int)
     {
-        if (preg_match("/(\d+)/", $int)) {
-            return $int;
+        if (preg_match("/^(\d+)$/", $int)) {
+            return (int)$int;
         }
         return 0;
     }
