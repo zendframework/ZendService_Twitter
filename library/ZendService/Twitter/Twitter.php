@@ -1135,7 +1135,7 @@ class Twitter
     protected function validInteger($int)
     {
         if (preg_match("/^(\d+)$/", $int)) {
-            return (int)$int;
+            return $int;
         }
         return 0;
     }
