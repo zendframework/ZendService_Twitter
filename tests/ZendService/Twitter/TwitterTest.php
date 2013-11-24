@@ -579,4 +579,58 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $response = $twitter->users->search('Zend');
         $this->assertTrue($response instanceof TwitterResponse);
     }
+
+    public function testAdapterAlwaysReachableIfSpecified()
+    {
+        $adapter = new \Zend\Http\Client\Adapter\Curl();
+
+        $config = array(
+            'http_client_options' => array(
+                'adapter' => $adapter,
+            ),
+        );
+
+        $twitter = new \ZendService\Twitter\Twitter($config);
+        $this->assertSame($adapter, $twitter->getHttpClient()->getAdapter());
+    }
+
+    public function testAdapterAlwaysReachableIfSpecifiedWithAccessToken()
+    {
+        $adapter = new \Zend\Http\Client\Adapter\Curl();
+
+        $config = array(
+            'access_token' => array(
+                'token'  => 'some_token',
+                'secret' => 'some_secret',
+            ),
+            'http_client_options' => array(
+                'adapter' => $adapter,
+            ),
+        );
+
+        $twitter = new \ZendService\Twitter\Twitter($config);
+        $this->assertSame($adapter, $twitter->getHttpClient()->getAdapter());
+    }
+
+    public function testAdapterAlwaysReachableIfSpecifiedWithAccessTokenAndOAuthOptions()
+    {
+        $adapter = new \Zend\Http\Client\Adapter\Curl();
+
+        $config = array(
+            'access_token' => array(
+                'token'  => 'some_token',
+                'secret' => 'some_secret',
+            ),
+            'oauth_options' => array(
+                'consumerKey' => 'some_consumer_key',
+                'consumerSecret' => 'some_consumer_secret',
+            ),
+            'http_client_options' => array(
+                'adapter' => $adapter,
+            ),
+        );
+
+        $twitter = new \ZendService\Twitter\Twitter($config);
+        $this->assertSame($adapter, $twitter->getHttpClient()->getAdapter());
+    }
 }
