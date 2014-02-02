@@ -1189,6 +1189,7 @@ class Twitter
         $client = $this->getHttpClient();
         $this->prepare($path, $client);
         $client->setParameterGet($query);
+        $client->setAdapter('Zend\Http\Client\Adapter\Curl');
         $client->setMethod(Http\Request::METHOD_GET);
         $response = $client->send();
         return $response;
