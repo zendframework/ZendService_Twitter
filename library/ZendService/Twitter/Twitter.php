@@ -824,8 +824,8 @@ class Twitter
                     }
                     $params['trim_user'] = $value;
                     break;
-                case 'contributor_details:':
-                    $params['contributor_details:'] = (bool) $value;
+                case 'contributor_details':
+                    $params['contributor_details'] = (bool) $value;
                     break;
                 case 'include_entities':
                     $params['include_entities'] = (bool) $value;
