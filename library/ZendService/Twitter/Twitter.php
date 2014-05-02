@@ -942,6 +942,10 @@ class Twitter
         $this->init();
         $path = 'statuses/update';
 
+        if (!is_array($optionalParams)) {
+            $optionalParams['in_reply_to_status_id'] = $optionalParams;
+        }
+
         $params = $optionalParams;
         $params['status'] = $status;
 
