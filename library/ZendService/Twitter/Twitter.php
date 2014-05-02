@@ -954,6 +954,8 @@ class Twitter
     /**
      * Sanitize status params, removes unsupported params from result
      *
+     * @todo   add sanitizers for every allowed param
+     * @todo   move sanitizers definition outside this method
      * @param  array $params 
      * @throws Exception\OutOfRangeException if message is too long
      * @throws Exception\InvalidArgumentException if message is empty
