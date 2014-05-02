@@ -968,24 +968,19 @@ class Twitter
      */
     public function sanitizeParams(array $params)
     {
+        $doNothingSanitizer = function ($value) {return $value;};
         $allowedParamsToSanitizers = array(
             'in_reply_to_status_id' => array(
                 array($this, 'validInteger'),
             ),
             'lat' => array(
-                function ($long) {
-                    return $long;
-                },
+                $doNothingSanitizer,
             ),
             'long' => array(
-                function ($long) {
-                    return $long;
-                },
+                $doNothingSanitizer,
             ),
             'place_id' => array(
-                function ($placeId) {
-                    return $placeId;
-                },
+                $doNothingSanitizer,
             ),
             'status' => array(
                 'lenOrThrow' => function ($status) {
@@ -1047,22 +1042,13 @@ class Twitter
      */
     protected function applySanitizer($value, $sanitizer)
     {
-        if (is_callable($sanitizer)) {
-            $value = $sanitizer($value);
-        } else if (is_array($sanitizer)) {
-            list($host, $method) = $sanitizer;
-            if (!method_exists($host, $method)) {
-                throw new Exception\InvalidArgumentException(
-                    'Sanitizer is not callable'
-                );
-            }
-            $value = call_user_func($sanitizer, $value);
-        } else {
+        if (!is_callable($sanitizer)) {
             throw new Exception\InvalidArgumentException(
                 'Sanitizer is not supported'
             );
         }
-        return $value;
+        $sanitized = call_user_func($sanitizer, $value);
+        return $sanitized;
     }
 
     /**
