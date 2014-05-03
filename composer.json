@@ -1,5 +1,5 @@
 {
-    "name": "gbili/zendservice-twitter",
+    "name": "zendframework/zendservice-twitter",
     "description": "OOP wrapper for the Twitter web service",
     "type": "library",
     "keywords": [
