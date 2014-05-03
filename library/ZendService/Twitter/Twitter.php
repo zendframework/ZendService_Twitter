@@ -929,39 +929,126 @@ class Twitter
     /**
      * Update user's current status
      *
-     * @todo   Support additional parameters supported by statuses/update endpoint
      * @param  string $status
-     * @param  null|int $inReplyToStatusId
+     * @param  array $optionalParams 
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\OutOfRangeException if message is too long
      * @throws Exception\InvalidArgumentException if message is empty
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusesUpdate($status, $inReplyToStatusId = null)
+    public function statusesUpdate($status, $optionalParams = array())
     {
         $this->init();
         $path = 'statuses/update';
-        $len = iconv_strlen(htmlspecialchars($status, ENT_QUOTES, 'UTF-8'), 'UTF-8');
-        if ($len > self::STATUS_MAX_CHARACTERS) {
-            throw new Exception\OutOfRangeException(
-                'Status must be no more than '
-                . self::STATUS_MAX_CHARACTERS
-                . ' characters in length'
-            );
-        } elseif (0 == $len) {
-            throw new Exception\InvalidArgumentException(
-                'Status must contain at least one character'
-            );
+
+        if (!is_array($optionalParams)) {
+            $optionalParams['in_reply_to_status_id'] = $optionalParams;
         }
 
-        $params = array('status' => $status);
-        $inReplyToStatusId = $this->validInteger($inReplyToStatusId);
-        if ($inReplyToStatusId) {
-            $params['in_reply_to_status_id'] = $inReplyToStatusId;
-        }
-        $response = $this->post($path, $params);
+        $params = $optionalParams;
+        $params['status'] = $status;
+
+        $sanitizedParams = $this->sanitizeParams($params);
+
+        $response = $this->post($path, $sanitizedParams);
         return new Response($response);
+    }
+
+    /**
+     * Sanitize status params, removes unsupported params from result
+     *
+     * @todo   add sanitizers for every allowed param
+     * @todo   move sanitizers definition outside this method
+     * @param  array $params 
+     * @throws Exception\OutOfRangeException if message is too long
+     * @throws Exception\InvalidArgumentException if message is empty
+     * @throws Exception\DomainException if unable to decode JSON payload
+     * @return sanitized params 
+     */
+    public function sanitizeParams(array $params)
+    {
+        $doNothingSanitizer = function ($value) {return $value;};
+        $allowedParamsToSanitizers = array(
+            'in_reply_to_status_id' => array(
+                array($this, 'validInteger'),
+            ),
+            'lat' => array(
+                $doNothingSanitizer,
+            ),
+            'long' => array(
+                $doNothingSanitizer,
+            ),
+            'place_id' => array(
+                $doNothingSanitizer,
+            ),
+            'status' => array(
+                'lenOrThrow' => function ($status) {
+                    $len = iconv_strlen(htmlspecialchars($status, ENT_QUOTES, 'UTF-8'), 'UTF-8');
+                    if ($len > self::STATUS_MAX_CHARACTERS) {
+                        throw new Exception\OutOfRangeException(
+                            'Status must be no more than '
+                            . self::STATUS_MAX_CHARACTERS
+                            . ' characters in length'
+                        );
+                    } elseif (0 == $len) {
+                        throw new Exception\InvalidArgumentException(
+                            'Status must contain at least one character'
+                        );
+                    }
+                    return $status;
+                },
+            ),
+        );
+
+        $sanitized = array();
+        foreach ($params as $paramIdentifier => $value) {
+            if (!isset($allowedParamsToSanitizers[$paramIdentifier])) continue;
+
+            $paramSanitizers = $allowedParamsToSanitizers[$paramIdentifier];
+
+            $sanitized[$paramIdentifier] = $this->sanitizeParam($value, $paramSanitizers);
+        }
+        return $sanitized;
+    }
+
+    /**
+     * Sanitize param
+     *
+     * @param  mixed $value 
+     * @param  array|mixed $paramSanitizers
+     * @throws Exception\InvalidArgumentException if sanitizer type is not valid or not supported
+     * @return sanitized value
+     */
+    protected function sanitizeParam($value, $paramSanitizers)
+    {
+        if (!is_array($paramSanitizers)) {
+            $paramSanitizers = array($paramSanitizers);
+        }
+        foreach ($paramSanitizers as $paramSanitizer) {
+            $value = $this->applySanitizer($value, $paramSanitizer);
+        }
+        return $value;
+    }
+
+
+    /**
+     * Apply sanitizer callable to value
+     *
+     * @param  mixed $value 
+     * @param  array $params 
+     * @throws Exception\InvalidArgumentException if sanitizer type is not valid or not supported
+     * @return sanitized value 
+     */
+    protected function applySanitizer($value, $sanitizer)
+    {
+        if (!is_callable($sanitizer)) {
+            throw new Exception\InvalidArgumentException(
+                'Sanitizer is not supported'
+            );
+        }
+        $sanitized = call_user_func($sanitizer, $value);
+        return $sanitized;
     }
 
     /**
