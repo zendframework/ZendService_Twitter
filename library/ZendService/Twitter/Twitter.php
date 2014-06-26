@@ -1251,4 +1251,27 @@ class Twitter
         $params['screen_name'] = $this->validateScreenName($id);
         return $params;
     }
+    
+      /**
+     * Fetch Tweets for given twitter user.
+     * 
+     * @param string $user
+     * @param int $count
+     * @return \ZendService\Twitter\Response
+     * @throws Exception\InvalidArgumentException
+     */
+    public function fetchTweets($user = null, $count = 20)
+    {
+        $this->init();
+        $path = 'favorites/list';        
+        if (is_null($user)) {
+            throw new Exception\InvalidArgumentException(
+                'Twitter user must be specified.'
+            );
+        }
+        $params = array('screen_name' => $user, 'count' => $count);        
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+    
 }
