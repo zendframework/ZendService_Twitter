@@ -1264,11 +1264,12 @@ class Twitter
     {
         $this->init();
         $path = 'favorites/list';        
-        if (is_null($user)) {
+        $len = iconv_strlen($user, 'UTF-8');
+        if (0 == $len) {
             throw new Exception\InvalidArgumentException(
-                'Twitter user must be specified.'
+                'User must contain at least one character'
             );
-        }
+        }        
         $params = array('screen_name' => $user, 'count' => $count);        
         $response = $this->get($path, $params);
         return new Response($response);
