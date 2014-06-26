@@ -1260,7 +1260,7 @@ class Twitter
      * @return \ZendService\Twitter\Response
      * @throws Exception\InvalidArgumentException
      */
-    public function fetchTweets($user = null, $count = 20)
+    public function fetchTweets($user, $count = 20)
     {
         $this->init();
         $path = 'favorites/list';        

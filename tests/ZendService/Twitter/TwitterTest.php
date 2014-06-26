@@ -579,4 +579,16 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $response = $twitter->users->search('Zend');
         $this->assertTrue($response instanceof TwitterResponse);
     }
+    
+    public function testfetchTweets()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubTwitter(
+            'favorites/list.json', Http\Request::METHOD_GET, 'favorites.list.json',
+            array('screen_name' => 'Zend', 'count' => 20)
+        ));
+        $response = $twitter->search->fetchTweets('Zend');
+        $this->assertTrue($response instanceof TwitterResponse);
+    }
+    
 }
