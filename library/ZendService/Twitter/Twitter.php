@@ -85,10 +85,13 @@ class Twitter
         'blocks',
         'directmessages',
         'favorites',
+        'friends',
         'friendships',
+        'followers',
         'search',
         'statuses',
         'users',
+        'lists'
     );
 
     /**
@@ -1250,5 +1253,105 @@ class Twitter
 
         $params['screen_name'] = $this->validateScreenName($id);
         return $params;
+    }
+
+
+    /**
+     * Get a list of up to 5000 follower IDs
+     *
+     * Get a list of up to 5,000 follower ids for the logged in account or for the
+     * screen name you pass in. Returns the next cursor if there are more to be
+     * returned.
+     *
+     * @param  int|string $id
+     * @param  array $params
+     * @return Response
+     */
+    protected function followersIds($id, array $params = array())
+    {
+        $this->init();
+        $path   = 'followers/ids';
+        $params   = $this->createUserParameter($id, $params);
+        $response = $this->get($path, $params);
+        return new Response($response);
+
+    }
+
+
+    /**
+     * Get a list of the lists that the logged in user is a member of
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param  int|string $id
+     * @param  array $params
+     * @return Response
+     */
+    protected function listsMemberships($id, array $params = array())
+    {
+        $this->init();
+        $path   = 'lists/memberships';
+        $params   = $this->createUserParameter($id, $params);
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+
+    /**
+     * Get a list of the friends that the logged in user has
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param  int|string $id
+     * @param  array $params
+     * @return Response
+     */
+    protected function friendshipsLookup($id, array $params = array())
+    {
+        $this->init();
+        $path   = 'friendships/lookup';
+        $params   = $this->createUserParameter($id, $params);
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+
+    /**
+     * Pass in one or more twitter IDs and it will return a list of user objects.
+     *
+     * This is the most effecient way of gatehring bulk user data.
+     *
+     * @param  int|string $id
+     * @param  array $params
+     * @return Response
+     */
+    protected function usersLookup($id, array $params = array())
+    {
+        $this->init();
+        $path   = 'users/lookup';
+        //$params   = $this->createUserParameter($id, $params);
+        $params['user_id'] = $id;
+        $response = $this->post($path, $params);
+        return new Response($response);
+    }
+
+    /**
+     * Returns a list of IDs of the current logged in user's friends or the friends of the screen name passed in as
+     * part of the parameters array.
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param  int|string $id
+     * @param  array $params
+     * @return Response
+     */
+    protected function friendsIds($id, array $params = array())
+    {
+        $this->init();
+        $path   = 'friends/ids';
+        $params   = $this->createUserParameter($id, $params);
+        $response = $this->get($path, $params);
+        return new Response($response);
+
     }
 }
