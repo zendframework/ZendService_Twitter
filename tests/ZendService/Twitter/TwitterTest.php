@@ -115,13 +115,12 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
 
     public function testResetsHttpClientOnReceiptOfAccessTokenToOauthClient()
     {
-        $this->markTestIncomplete('Problem with resolving classes for mocking');
         $oauth = $this->getMock('ZendOAuth\Consumer', array(), array(), '', false);
         $client = $this->getMock('ZendOAuth\Client', array(), array(), '', false);
         $token = $this->getMock('ZendOAuth\Token\Access', array(), array(), '', false);
         $token->expects($this->once())->method('getHttpClient')->will($this->returnValue($client));
         $oauth->expects($this->once())->method('getAccessToken')->will($this->returnValue($token));
-        $client->expects($this->once())->method('setHeaders')->with('Accept-Charset', 'ISO-8859-1,utf-8');
+        $client->expects($this->once())->method('setHeaders')->with(array('Accept-Charset'=> 'ISO-8859-1,utf-8'));
 
         $twitter = new Twitter\Twitter(array(), $oauth);
         $twitter->getAccessToken(array(), $this->getMock('ZendOAuth\Token\Request'));
