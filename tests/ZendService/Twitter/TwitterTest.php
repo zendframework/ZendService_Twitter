@@ -13,6 +13,7 @@ namespace ZendTest\Twitter;
 use Zend\Http;
 use ZendService\Twitter;
 use ZendService\Twitter\Response as TwitterResponse;
+use Zend\Http\Client\Adapter\Curl as CurlAdapter;
 
 /**
  * @category   Zend
@@ -43,13 +44,15 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
      */
     protected function stubTwitter($path, $method, $responseFile = null, array $params = null)
     {
-        $client = $this->getMock('ZendOAuth\Client', array(), array(), '', false);
+        $client = $this->getMockBuilder('ZendOAuth\Client', [], [], '', false)
+            ->disableOriginalConstructor()
+            ->getMock();
         $client->expects($this->any())->method('resetParameters')
             ->will($this->returnValue($client));
         $client->expects($this->once())->method('setUri')
             ->with('https://api.twitter.com/1.1/' . $path);
-        $response = $this->getMock('Zend\Http\Response', array(), array(), '', false);
-        if (!is_null($params)) {
+        $response = $this->getMockBuilder('Zend\Http\Response', [], [], '', false)->getMock();
+        if (! is_null($params)) {
             $setter = 'setParameter' . ucfirst(strtolower($method));
             $client->expects($this->once())->method($setter)->with($params);
         }
@@ -57,7 +60,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($response));
         $response->expects($this->any())->method('getBody')
             ->will($this->returnValue(
-                isset($responseFile) ? file_get_contents(__DIR__ . '/_files/' . $responseFile) : ''
+                isset($responseFile) ? file_get_contents(__DIR__ . '/_files/' . $responseFile) : '{}'
             ));
         return $client;
     }
@@ -68,13 +71,15 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
 
     public function testProvidingAccessTokenInOptionsSetsHttpClientFromAccessToken()
     {
-        $token = $this->getMock('ZendOAuth\Token\Access', array(), array(), '', false);
-        $client = $this->getMock('ZendOAuth\Client', array(), array(), '', false);
+        $token = $this->getMockBuilder('ZendOAuth\Token\Access', [], [], '', false)->getMock();
+        $client = $this->getMockBuilder('ZendOAuth\Client', [], [], '', false)
+            ->disableOriginalConstructor()
+            ->getMock();
         $token->expects($this->once())->method('getHttpClient')
-            ->with(array('token'=>$token, 'siteUrl'=>'https://api.twitter.com/oauth'))
+            ->with(['token' => $token, 'siteUrl' => 'https://api.twitter.com/oauth'])
             ->will($this->returnValue($client));
 
-        $twitter = new Twitter\Twitter(array('accessToken'=>$token, 'opt1'=>'val1'));
+        $twitter = new Twitter\Twitter(['accessToken' => $token, 'opt1' => 'val1']);
         $this->assertTrue($client === $twitter->getHttpClient());
     }
 
@@ -86,52 +91,59 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
 
     public function testChecksAuthenticatedStateBasedOnAvailabilityOfAccessTokenBasedClient()
     {
-        $token = $this->getMock('ZendOAuth\Token\Access', array(), array(), '', false);
-        $client = $this->getMock('ZendOAuth\Client', array(), array(), '', false);
+        $token = $this->getMockBuilder('ZendOAuth\Token\Access', [], [], '', false)->getMock();
+        $client = $this->getMockBuilder('ZendOAuth\Client', [], [], '', false)
+            ->disableOriginalConstructor()
+            ->getMock();
         $token->expects($this->once())->method('getHttpClient')
-            ->with(array('token'=>$token, 'siteUrl'=>'https://api.twitter.com/oauth'))
+            ->with(['token' => $token, 'siteUrl' => 'https://api.twitter.com/oauth'])
             ->will($this->returnValue($client));
 
-        $twitter = new Twitter\Twitter(array('accessToken'=>$token));
+        $twitter = new Twitter\Twitter(['accessToken' => $token]);
         $this->assertTrue($twitter->isAuthorised());
     }
 
     public function testRelaysMethodsToInternalOAuthInstance()
     {
-        $oauth = $this->getMock('ZendOAuth\Consumer', array(), array(), '', false);
+        $oauth = $this->getMockBuilder('ZendOAuth\Consumer', [], [], '', false)->getMock();
         $oauth->expects($this->once())->method('getRequestToken')->will($this->returnValue('foo'));
         $oauth->expects($this->once())->method('getRedirectUrl')->will($this->returnValue('foo'));
         $oauth->expects($this->once())->method('redirect')->will($this->returnValue('foo'));
         $oauth->expects($this->once())->method('getAccessToken')->will($this->returnValue('foo'));
         $oauth->expects($this->once())->method('getToken')->will($this->returnValue('foo'));
 
-        $twitter = new Twitter\Twitter(array('opt1'=>'val1'), $oauth);
+        $twitter = new Twitter\Twitter(['opt1' => 'val1'], $oauth);
         $this->assertEquals('foo', $twitter->getRequestToken());
         $this->assertEquals('foo', $twitter->getRedirectUrl());
         $this->assertEquals('foo', $twitter->redirect());
-        $this->assertEquals('foo', $twitter->getAccessToken(array(), $this->getMock('ZendOAuth\Token\Request')));
+        $this->assertEquals('foo', $twitter->getAccessToken(
+            [],
+            $this->getMockBuilder('ZendOAuth\Token\Request')->getMock()
+        ));
         $this->assertEquals('foo', $twitter->getToken());
     }
 
     public function testResetsHttpClientOnReceiptOfAccessTokenToOauthClient()
     {
         $this->markTestIncomplete('Problem with resolving classes for mocking');
-        $oauth = $this->getMock('ZendOAuth\Consumer', array(), array(), '', false);
-        $client = $this->getMock('ZendOAuth\Client', array(), array(), '', false);
-        $token = $this->getMock('ZendOAuth\Token\Access', array(), array(), '', false);
+        $oauth = $this->getMockBuilder('ZendOAuth\Consumer', [], [], '', false)->getMock();
+        $client = $this->getMockBuilder('ZendOAuth\Client', [], [], '', false)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $token = $this->getMockBuilder('ZendOAuth\Token\Access', [], [], '', false)->getMock();
         $token->expects($this->once())->method('getHttpClient')->will($this->returnValue($client));
         $oauth->expects($this->once())->method('getAccessToken')->will($this->returnValue($token));
         $client->expects($this->once())->method('setHeaders')->with('Accept-Charset', 'ISO-8859-1,utf-8');
 
-        $twitter = new Twitter\Twitter(array(), $oauth);
-        $twitter->getAccessToken(array(), $this->getMock('ZendOAuth\Token\Request'));
+        $twitter = new Twitter\Twitter([], $oauth);
+        $twitter->getAccessToken([], $this->getMockBuilder('ZendOAuth\Token\Request')->getMock());
         $this->assertTrue($client === $twitter->getHttpClient());
     }
 
     public function testAuthorisationFailureWithUsernameAndNoAccessToken()
     {
         $this->setExpectedException('ZendService\Twitter\Exception\ExceptionInterface');
-        $twitter = new Twitter\Twitter(array('username'=>'me'));
+        $twitter = new Twitter\Twitter(['username' => 'me']);
         $twitter->statusesPublicTimeline();
     }
 
@@ -142,8 +154,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter();
         $twitter->setHttpClient($this->stubTwitter(
-            'users/show.json', Http\Request::METHOD_GET, 'users.show.mwop.json',
-            array('screen_name' => 'mwop')
+            'users/show.json',
+            Http\Request::METHOD_GET,
+            'users.show.mwop.json',
+            ['screen_name' => 'mwop']
         ));
         $response = $twitter->users->show('mwop');
         $this->assertInstanceOf('ZendService\Twitter\Response', $response);
@@ -158,9 +172,11 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter();
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/user_timeline.json', Http\Request::METHOD_GET, 'statuses.user_timeline.mwop.json'
+            'statuses/user_timeline.json',
+            Http\Request::METHOD_GET,
+            'statuses.user_timeline.mwop.json'
         ));
-        $twitter->statuses->userTimeline(array('screen_name' => 'mwop'));
+        $twitter->statuses->userTimeline(['screen_name' => 'mwop']);
     }
 
     /**
@@ -170,7 +186,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException('ZendService\Twitter\Exception\ExceptionInterface');
         $twitter = new Twitter\Twitter();
-        $twitter->statuses->userTimeline(array('screen_name' => 'abc.def'));
+        $twitter->statuses->userTimeline(['screen_name' => 'abc.def']);
     }
 
     /**
@@ -180,7 +196,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException('\ZendService\Twitter\Exception\ExceptionInterface');
         $twitter = new Twitter\Twitter();
-        $twitter->statuses->userTimeline(array('screen_name' => 'abcdef_abc123_abc123x'));
+        $twitter->statuses->userTimeline(['screen_name' => 'abcdef_abc123_abc123x']);
     }
 
     /**
@@ -190,15 +206,18 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/user_timeline.json', Http\Request::METHOD_GET, 'statuses.user_timeline.mwop.json', array(
+            'statuses/user_timeline.json',
+            Http\Request::METHOD_GET,
+            'statuses.user_timeline.mwop.json',
+            [
                 'count' => '123',
                 'user_id' => 783214,
                 'since_id' => '10000',
                 'max_id' => '20000',
-                'screen_name' => 'twitter'
-            )
+                'screen_name' => 'twitter',
+            ]
         ));
-        $twitter->statuses->userTimeline(array(
+        $twitter->statuses->userTimeline([
             'id' => '783214',
             'since' => '+2 days', /* invalid param since Apr 2009 */
             'page' => '1',
@@ -207,7 +226,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'since_id' => '10000',
             'max_id' => '20000',
             'screen_name' => 'twitter'
-        ));
+        ]);
     }
 
     public function testOverloadingGetShouldReturnObjectInstanceWithValidMethodType()
@@ -235,7 +254,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/sample.json', Http\Request::METHOD_GET, 'statuses.sample.json'
+            'statuses/sample.json',
+            Http\Request::METHOD_GET,
+            'statuses.sample.json'
         ));
         $twitter->statuses->sample();
     }
@@ -251,7 +272,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'account/verify_credentials.json', Http\Request::METHOD_GET, 'account.verify_credentials.json'
+            'account/verify_credentials.json',
+            Http\Request::METHOD_GET,
+            'account.verify_credentials.json'
         ));
         $response = $twitter->account->verifyCredentials();
         $this->assertTrue($response instanceof TwitterResponse);
@@ -261,7 +284,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/sample.json', Http\Request::METHOD_GET, 'statuses.sample.json'
+            'statuses/sample.json',
+            Http\Request::METHOD_GET,
+            'statuses.sample.json'
         ));
         $response = $twitter->statuses->sample();
         $this->assertTrue($response instanceof TwitterResponse);
@@ -271,7 +296,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'application/rate_limit_status.json', Http\Request::METHOD_GET, 'application.rate_limit_status.json'
+            'application/rate_limit_status.json',
+            Http\Request::METHOD_GET,
+            'application.rate_limit_status.json'
         ));
         $response = $twitter->application->rateLimitStatus();
         $this->assertTrue($response instanceof TwitterResponse);
@@ -281,7 +308,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'application/rate_limit_status.json', Http\Request::METHOD_GET, 'application.rate_limit_status.json'
+            'application/rate_limit_status.json',
+            Http\Request::METHOD_GET,
+            'application.rate_limit_status.json'
         ));
         $response = $twitter->application->rateLimitStatus();
         $status = $response->toValue();
@@ -296,8 +325,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'friendships/create.json', Http\Request::METHOD_POST, 'friendships.create.twitter.json',
-            array('screen_name' => 'twitter')
+            'friendships/create.json',
+            Http\Request::METHOD_POST,
+            'friendships.create.twitter.json',
+            ['screen_name' => 'twitter']
         ));
         $response = $twitter->friendships->create('twitter');
         $this->assertTrue($response instanceof TwitterResponse);
@@ -307,10 +338,12 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/home_timeline.json', Http\Request::METHOD_GET, 'statuses.home_timeline.page.json',
-            array('count' => 3)
+            'statuses/home_timeline.json',
+            Http\Request::METHOD_GET,
+            'statuses.home_timeline.page.json',
+            ['count' => 3]
         ));
-        $response = $twitter->statuses->homeTimeline(array('count' => 3));
+        $response = $twitter->statuses->homeTimeline(['count' => 3]);
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -321,10 +354,12 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/user_timeline.json', Http\Request::METHOD_GET, 'statuses.user_timeline.mwop.json',
-            array('screen_name' => 'mwop')
+            'statuses/user_timeline.json',
+            Http\Request::METHOD_GET,
+            'statuses.user_timeline.mwop.json',
+            ['screen_name' => 'mwop']
         ));
-        $response = $twitter->statuses->userTimeline(array('screen_name' => 'mwop'));
+        $response = $twitter->statuses->userTimeline(['screen_name' => 'mwop']);
         $this->assertTrue($response instanceof TwitterResponse);
     }
 
@@ -335,8 +370,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/update.json', Http\Request::METHOD_POST, 'statuses.update.json',
-            array('status'=>'Test Message 1')
+            'statuses/update.json',
+            Http\Request::METHOD_POST,
+            'statuses.update.json',
+            ['status' => 'Test Message 1']
         ));
         $response = $twitter->statuses->update('Test Message 1');
         $this->assertTrue($response instanceof TwitterResponse);
@@ -360,7 +397,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/show/307529814640840705.json', Http\Request::METHOD_GET, 'statuses.show.json'
+            'statuses/show/307529814640840705.json',
+            Http\Request::METHOD_GET,
+            'statuses.show.json'
         ));
         $response = $twitter->statuses->show('307529814640840705');
         $this->assertTrue($response instanceof TwitterResponse);
@@ -370,8 +409,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'favorites/create.json', Http\Request::METHOD_POST, 'favorites.create.json',
-            array('id' => 15042159587)
+            'favorites/create.json',
+            Http\Request::METHOD_POST,
+            'favorites.create.json',
+            ['id' => 15042159587]
         ));
         $response = $twitter->favorites->create(15042159587);
         $this->assertTrue($response instanceof TwitterResponse);
@@ -381,7 +422,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'favorites/list.json', Http\Request::METHOD_GET, 'favorites.list.json'
+            'favorites/list.json',
+            Http\Request::METHOD_GET,
+            'favorites.list.json'
         ));
         $response = $twitter->favorites->list();
         $this->assertTrue($response instanceof TwitterResponse);
@@ -391,8 +434,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'favorites/destroy.json', Http\Request::METHOD_POST, 'favorites.destroy.json',
-            array('id' => 15042159587)
+            'favorites/destroy.json',
+            Http\Request::METHOD_POST,
+            'favorites.destroy.json',
+            ['id' => 15042159587]
         ));
         $response = $twitter->favorites->destroy(15042159587);
         $this->assertTrue($response instanceof TwitterResponse);
@@ -402,7 +447,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/destroy/15042159587.json', Http\Request::METHOD_POST, 'statuses.destroy.json'
+            'statuses/destroy/15042159587.json',
+            Http\Request::METHOD_POST,
+            'statuses.destroy.json'
         ));
         $response = $twitter->statuses->destroy(15042159587);
         $this->assertTrue($response instanceof TwitterResponse);
@@ -412,7 +459,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/home_timeline.json', Http\Request::METHOD_GET, 'statuses.home_timeline.page.json'
+            'statuses/home_timeline.json',
+            Http\Request::METHOD_GET,
+            'statuses.home_timeline.page.json'
         ));
         $response = $twitter->statuses->homeTimeline();
         $this->assertTrue($response instanceof TwitterResponse);
@@ -422,8 +471,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'users/show.json', Http\Request::METHOD_GET, 'users.show.mwop.json',
-            array('screen_name' => 'mwop')
+            'users/show.json',
+            Http\Request::METHOD_GET,
+            'users.show.mwop.json',
+            ['screen_name' => 'mwop']
         ));
         $response = $twitter->users->show('mwop');
         $this->assertTrue($response instanceof TwitterResponse);
@@ -437,7 +488,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'statuses/mentions_timeline.json', Http\Request::METHOD_GET, 'statuses.mentions_timeline.json'
+            'statuses/mentions_timeline.json',
+            Http\Request::METHOD_GET,
+            'statuses.mentions_timeline.json'
         ));
         $response = $twitter->statuses->mentionsTimeline();
         $this->assertTrue($response instanceof TwitterResponse);
@@ -450,8 +503,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'friendships/destroy.json', Http\Request::METHOD_POST, 'friendships.destroy.twitter.json',
-            array('screen_name' => 'twitter')
+            'friendships/destroy.json',
+            Http\Request::METHOD_POST,
+            'friendships.destroy.twitter.json',
+            ['screen_name' => 'twitter']
         ));
         $response = $twitter->friendships->destroy('twitter');
         $this->assertTrue($response instanceof TwitterResponse);
@@ -461,8 +516,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'blocks/create.json', Http\Request::METHOD_POST, 'blocks.create.twitter.json',
-            array('screen_name' => 'twitter')
+            'blocks/create.json',
+            Http\Request::METHOD_POST,
+            'blocks.create.twitter.json',
+            ['screen_name' => 'twitter']
         ));
         $response = $twitter->blocks->create('twitter');
         $this->assertTrue($response instanceof TwitterResponse);
@@ -472,8 +529,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'blocks/list.json', Http\Request::METHOD_GET, 'blocks.list.json',
-            array('cursor' => -1)
+            'blocks/list.json',
+            Http\Request::METHOD_GET,
+            'blocks.list.json',
+            ['cursor' => -1]
         ));
         $response = $twitter->blocks->list();
         $this->assertTrue($response instanceof TwitterResponse);
@@ -488,8 +547,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
                 'users/show.json',
                 Http\Request::METHOD_GET,
                 null,
-                array('screen_name' => 'JuicyBurger661')
-        ));
+                ['screen_name' => 'JuicyBurger661']
+            )
+        );
         //$id as screen_name with numbers
         $twitter->users->show('JuicyBurger661');
     }
@@ -503,11 +563,11 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
                 'users/show.json',
                 Http\Request::METHOD_GET,
                 null,
-                array('user_id' => 137307825)
-            ));
+                ['user_id' => 137307825]
+            )
+        );
         //$id as string
         $twitter->users->show('137307825');
-
     }
 
     public function testUsersShowAcceptsIdAsIntegerArgument()
@@ -519,8 +579,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
                 'users/show.json',
                 Http\Request::METHOD_GET,
                 null,
-                array('user_id' => 137307825)
-            ));
+                ['user_id' => 137307825]
+            )
+        );
         //$id as integer
         $twitter->users->show(137307825);
     }
@@ -529,8 +590,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'blocks/ids.json', Http\Request::METHOD_GET, 'blocks.ids.json',
-            array('cursor' => -1)
+            'blocks/ids.json',
+            Http\Request::METHOD_GET,
+            'blocks.ids.json',
+            ['cursor' => -1]
         ));
         $response = $twitter->blocks->ids();
         $this->assertTrue($response instanceof TwitterResponse);
@@ -541,8 +604,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'blocks/destroy.json', Http\Request::METHOD_POST, 'blocks.destroy.twitter.json',
-            array('screen_name' => 'twitter')
+            'blocks/destroy.json',
+            Http\Request::METHOD_POST,
+            'blocks.destroy.twitter.json',
+            ['screen_name' => 'twitter']
         ));
         $response = $twitter->blocks->destroy('twitter');
         $this->assertTrue($response instanceof TwitterResponse);
@@ -553,8 +618,8 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
      */
     public function testTwitterObjectsSoNotShareSameHttpClientToPreventConflictingAuthentication()
     {
-        $twitter1 = new Twitter\Twitter(array('username'=>'zftestuser1'));
-        $twitter2 = new Twitter\Twitter(array('username'=>'zftestuser2'));
+        $twitter1 = new Twitter\Twitter(['username' => 'zftestuser1']);
+        $twitter2 = new Twitter\Twitter(['username' => 'zftestuser2']);
         $this->assertFalse($twitter1->getHttpClient() === $twitter2->getHttpClient());
     }
 
@@ -562,8 +627,10 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'search/tweets.json', Http\Request::METHOD_GET, 'search.tweets.json',
-            array('q' => '#zf2')
+            'search/tweets.json',
+            Http\Request::METHOD_GET,
+            'search.tweets.json',
+            ['q' => '#zf2']
         ));
         $response = $twitter->search->tweets('#zf2');
         $this->assertTrue($response instanceof TwitterResponse);
@@ -573,10 +640,65 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
     {
         $twitter = new Twitter\Twitter;
         $twitter->setHttpClient($this->stubTwitter(
-            'users/search.json', Http\Request::METHOD_GET, 'users.search.json',
-            array('q' => 'Zend')
+            'users/search.json',
+            Http\Request::METHOD_GET,
+            'users.search.json',
+            ['q' => 'Zend']
         ));
         $response = $twitter->users->search('Zend');
         $this->assertTrue($response instanceof TwitterResponse);
+    }
+
+    public function providerAdapterAlwaysReachableIfSpecifiedConfiguration()
+    {
+        $adapter = new CurlAdapter();
+
+        return [
+            [
+                [
+                    'http_client_options' => [
+                        'adapter' => $adapter,
+                    ],
+                ],
+                $adapter
+            ],
+            [
+                [
+                    'access_token' => [
+                        'token'  => 'some_token',
+                        'secret' => 'some_secret',
+                    ],
+                    'http_client_options' => [
+                        'adapter' => $adapter,
+                    ],
+                ],
+                $adapter
+            ],
+            [
+                [
+                    'access_token' => [
+                        'token'  => 'some_token',
+                        'secret' => 'some_secret',
+                    ],
+                    'oauth_options' => [
+                        'consumerKey' => 'some_consumer_key',
+                        'consumerSecret' => 'some_consumer_secret',
+                    ],
+                    'http_client_options' => [
+                        'adapter' => $adapter,
+                    ],
+                ],
+                $adapter
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider providerAdapterAlwaysReachableIfSpecifiedConfiguration
+      */
+    public function testAdapterAlwaysReachableIfSpecified($config, $adapter)
+    {
+        $twitter = new \ZendService\Twitter\Twitter($config);
+        $this->assertSame($adapter, $twitter->getHttpClient()->getAdapter());
     }
 }

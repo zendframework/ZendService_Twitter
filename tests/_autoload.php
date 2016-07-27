@@ -3,7 +3,7 @@
  * Setup autoloading
  */
 
-if (!file_exists(__DIR__ . '/../vendor/autoload.php')) {
+if (! file_exists(__DIR__ . '/../vendor/autoload.php')) {
     throw new RuntimeException('This component has dependencies that are unmet.
 
 Please install composer (http://getcomposer.org), and run the following
@@ -20,8 +20,8 @@ spl_autoload_register(function ($class) {
         return false;
     }
     $normalized = str_replace('ZendServiceTest\\', '', $class);
-    $filename   = __DIR__ . '/ZendService/' . str_replace(array('\\', '_'), '/', $normalized) . '.php';
-    if (!file_exists($filename)) {
+    $filename   = __DIR__ . '/ZendService/' . str_replace(['\\', '_'], '/', $normalized) . '.php';
+    if (! file_exists($filename)) {
         return false;
     }
     return include_once $filename;
