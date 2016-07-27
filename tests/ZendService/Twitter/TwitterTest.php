@@ -487,7 +487,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             $this->stubTwitter(
                 'users/show.json',
                 Http\Request::METHOD_GET,
-                null,
+                'users.show.JuicyBurger661.json',
                 array('screen_name' => 'JuicyBurger661')
         ));
         //$id as screen_name with numbers
@@ -502,11 +502,11 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             $this->stubTwitter(
                 'users/show.json',
                 Http\Request::METHOD_GET,
-                null,
-                array('user_id' => 137307825)
+                'users.show.mwop.json',
+                array('user_id' => 9453382)
             ));
         //$id as string
-        $twitter->users->show('137307825');
+        $twitter->users->show('9453382');
 
     }
 
@@ -518,11 +518,11 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             $this->stubTwitter(
                 'users/show.json',
                 Http\Request::METHOD_GET,
-                null,
-                array('user_id' => 137307825)
+                'users.show.mwop.json',
+                array('user_id' => 9453382)
             ));
         //$id as integer
-        $twitter->users->show(137307825);
+        $twitter->users->show(9453382);
     }
 
     public function testBlockingIds()
