@@ -6,7 +6,7 @@
         "zf2",
         "twitter"
     ],
-    "homepage": "http://packages.zendframework.com/",
+    "homepage": "https://packages.zendframework.com/",
     "license": "BSD-3-Clause",
     "autoload": {
         "psr-0": {
@@ -16,7 +16,7 @@
     "repositories": [
         {
             "type": "composer",
-            "url": "http://packages.zendframework.com/"
+            "url": "https://packages.zendframework.com/"
         }
     ],
     "require": {
