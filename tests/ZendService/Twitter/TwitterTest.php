@@ -13,6 +13,7 @@ namespace ZendTest\Twitter;
 use Zend\Http;
 use ZendService\Twitter;
 use ZendService\Twitter\Response as TwitterResponse;
+use Zend\Http\Client\Adapter\Curl as CurlAdapter;
 
 /**
  * @category   Zend
@@ -578,5 +579,57 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         ));
         $response = $twitter->users->search('Zend');
         $this->assertTrue($response instanceof TwitterResponse);
+    }
+
+    public function providerAdapterAlwaysReachableIfSpecifiedConfiguration() {
+        $adapter = new CurlAdapter();
+
+        return array(
+            array(
+                array(
+                    'http_client_options' => array(
+                        'adapter' => $adapter,
+                    ),
+                ),
+                $adapter
+            ),
+            array(
+                array(
+                    'access_token' => array(
+                        'token'  => 'some_token',
+                        'secret' => 'some_secret',
+                    ),
+                    'http_client_options' => array(
+                        'adapter' => $adapter,
+                    ),
+                ),
+                $adapter
+            ),
+            array(
+                array(
+                    'access_token' => array(
+                        'token'  => 'some_token',
+                        'secret' => 'some_secret',
+                    ),
+                    'oauth_options' => array(
+                        'consumerKey' => 'some_consumer_key',
+                        'consumerSecret' => 'some_consumer_secret',
+                    ),
+                    'http_client_options' => array(
+                        'adapter' => $adapter,
+                    ),
+                ),
+                $adapter
+            ),
+        );
+    }
+
+    /**
+     * @dataProvider providerAdapterAlwaysReachableIfSpecifiedConfiguration
+      */
+    public function testAdapterAlwaysReachableIfSpecified($config, $adapter)
+    {
+        $twitter = new \ZendService\Twitter\Twitter($config);
+        $this->assertSame($adapter, $twitter->getHttpClient()->getAdapter());
     }
 }
