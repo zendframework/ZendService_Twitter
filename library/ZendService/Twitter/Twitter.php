@@ -1355,4 +1355,65 @@ class Twitter
         $response = $this->get($path, $params);
         return new Response($response);
     }
+
+
+    /**
+     * Returns the members of the specified list. Private list members will 
+     * only be shown if the authenticated user owns the specified list.
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param  int|string $id
+     * @param  array $params
+     * @return Response
+     */
+    protected function listsMemberships($id, array $params = [])
+    {
+        $this->init();
+        $path   = 'lists/members';
+        $params   = $this->createUserParameter($id, $params);
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+
+    /**
+     * Returns the subscribers of the specified list. Private list subscribers 
+     * will only be shown if the authenticated user owns the specified list.
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param  int|string $id
+     * @param  array $params
+     * @return Response
+     */
+    protected function listsSubscribers($id, array $params = [])
+    {
+        $this->init();
+        $path   = 'lists/subscribers';
+        $params   = $this->createUserParameter($id, $params);
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+
+    /**
+     * Returns the relationships of the authenticating user to the 
+     * comma-separated list of up to 100 screen_names or user_ids provided.
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param  int|string $id
+     * @param  array $params
+     * @return Response
+     */
+    protected function friendshipsLookup($id, array $params = [])
+    {
+        $this->init();
+        $path   = 'friendships/lookup';
+        $params   = $this->createUserParameter($id, $params);
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
 }
