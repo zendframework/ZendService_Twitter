@@ -1273,7 +1273,7 @@ class Twitter
      * @param  array $params
      * @return Response
      */
-    protected function followersIds($id, array $params = array())
+    protected function followersIds($id, array $params = [])
     {
         $this->init();
         $path = 'followers/ids';
@@ -1291,7 +1291,7 @@ class Twitter
      * @param  array $params
      * @return Response
      */
-    protected function listsMemberships($id, array $params = array())
+    protected function listsMemberships($id, array $params = [])
     {
         $this->init();
         $path = 'lists/memberships';
@@ -1309,7 +1309,7 @@ class Twitter
      * @param  array $params
      * @return Response
      */
-    protected function friendshipsLookup($id, array $params = array())
+    protected function friendshipsLookup($id, array $params = [])
     {
         $this->init();
         $path = 'friendships/lookup';
@@ -1327,7 +1327,7 @@ class Twitter
      * @param  array $params
      * @return Response
      */
-    protected function usersLookup($id, array $params = array())
+    protected function usersLookup($id, array $params = [])
     {
         $this->init();
         $path = 'users/lookup';
@@ -1347,7 +1347,7 @@ class Twitter
      * @param  array $params
      * @return Response
      */
-    protected function friendsIds($id, array $params = array())
+    protected function friendsIds($id, array $params = [])
     {
         $this->init();
         $path = 'friends/ids';
