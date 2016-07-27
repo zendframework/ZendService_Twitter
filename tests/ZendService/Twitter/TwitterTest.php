@@ -132,7 +132,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $token = $this->getMockBuilder('ZendOAuth\Token\Access', [], [], '', false)->getMock();
         $token->expects($this->once())->method('getHttpClient')->will($this->returnValue($client));
         $oauth->expects($this->once())->method('getAccessToken')->will($this->returnValue($token));
-        $client->expects($this->once())->method('setHeaders')->with(['Accept-Charset'=> 'ISO-8859-1,utf-8']);
+        $client->expects($this->once())->method('setHeaders')->with(['Accept-Charset' => 'ISO-8859-1,utf-8']);
 
         $twitter = new Twitter\Twitter([], $oauth);
         $twitter->getAccessToken([], $this->getMockBuilder('ZendOAuth\Token\Request')->getMock());
