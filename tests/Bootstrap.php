@@ -11,14 +11,7 @@
 /*
  * Set error reporting to the level to which Zend Framework code must comply.
  */
-error_reporting( E_ALL | E_STRICT );
-
-$phpUnitVersion = PHPUnit_Runner_Version::id();
-if ('@package_version@' !== $phpUnitVersion && version_compare($phpUnitVersion, '3.5.0', '<')) {
-    echo 'This version of PHPUnit (' . PHPUnit_Runner_Version::id() . ') is not supported in Zend Framework 2.x unit tests.' . PHP_EOL;
-    exit(1);
-}
-unset($phpUnitVersion);
+error_reporting(E_ALL | E_STRICT);
 
 /*
  * Determine the root, library, and tests directories of the framework
@@ -34,11 +27,11 @@ $zfCoreTests   = "$zfRoot/tests";
  * loading other copies of the framework code and tests that would supersede
  * this copy.
  */
-$path = array(
+$path = [
     $zfCoreLibrary,
     $zfCoreTests,
     get_include_path(),
-);
+];
 set_include_path(implode(PATH_SEPARATOR, $path));
 
 /**

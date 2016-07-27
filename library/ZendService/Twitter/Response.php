@@ -80,7 +80,7 @@ class Response
         if (null === $this->jsonBody) {
             return null;
         }
-        if (!isset($this->jsonBody->{$name})) {
+        if (! isset($this->jsonBody->{$name})) {
             return null;
         }
         return $this->jsonBody->{$name};
@@ -103,7 +103,7 @@ class Response
      */
     public function isError()
     {
-        return !$this->httpResponse->isSuccess();
+        return ! $this->httpResponse->isSuccess();
     }
 
     /**
@@ -120,11 +120,11 @@ class Response
      */
     public function getErrors()
     {
-        if (!$this->isError()) {
-            return array();
+        if (! $this->isError()) {
+            return [];
         }
         if (null === $this->jsonBody
-            || !isset($this->jsonBody->errors)
+            || ! isset($this->jsonBody->errors)
         ) {
             throw new Exception\DomainException(
                 'Either no JSON response received, or JSON error response is malformed; cannot return errors'

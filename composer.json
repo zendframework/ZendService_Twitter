@@ -6,30 +6,24 @@
         "zf2",
         "twitter"
     ],
-    "homepage": "http://packages.zendframework.com/",
     "license": "BSD-3-Clause",
     "autoload": {
         "psr-0": {
             "ZendService\\Twitter\\": "library/"
         }
     },
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "http://packages.zendframework.com/"
-        }
-    ],
     "require": {
-        "php": ">=5.3.3",
-        "zendframework/zend-feed": ">=2.0.0",
-        "zendframework/zend-http": ">=2.0.0",
-        "zendframework/zend-json": ">=2.0.0",
-        "zendframework/zend-stdlib": ">=2.0.0",
-        "zendframework/zend-uri": ">=2.0.0",
-        "zendframework/zendoauth": ">=2.0.0"
+        "php": "^5.5 || ^7.0",
+        "zendframework/zend-feed": "^2.7",
+        "zendframework/zend-http": "^2.5.4",
+        "zendframework/zend-json": "^2.6.1 || ^3.0",
+        "zendframework/zend-stdlib": "^2.7.7 || ^3.0.1",
+        "zendframework/zend-uri": "^2.5.2",
+        "zendframework/zendoauth": "^2.0.3"
     },
     "require-dev": {
-        "zendframework/zend-config": ">=2.0.0"
+        "squizlabs/php_codesniffer": "^2.6.2",
+        "phpunit/phpunit": "^4.8 || ^5.0"
     },
     "extra": {
         "branch-alias": {

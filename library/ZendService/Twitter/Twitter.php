@@ -79,7 +79,7 @@ class Twitter
      *
      * @var array
      */
-    protected $methodTypes = array(
+    protected $methodTypes = [
         'account',
         'application',
         'blocks',
@@ -89,14 +89,14 @@ class Twitter
         'search',
         'statuses',
         'users',
-    );
+    ];
 
     /**
      * Options passed to constructor
      *
      * @var array
      */
-    protected $options = array();
+    protected $options = [];
 
     /**
      * Username
@@ -117,8 +117,8 @@ class Twitter
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
         }
-        if (!is_array($options)) {
-            $options = array();
+        if (! is_array($options)) {
+            $options = [];
         }
 
         $this->options = $options;
@@ -134,7 +134,7 @@ class Twitter
             $accessToken = $options['access_token'];
         }
 
-        $oauthOptions = array();
+        $oauthOptions = [];
         if (isset($options['oauthOptions'])) {
             $oauthOptions = $options['oauthOptions'];
         } elseif (isset($options['oauth_options'])) {
@@ -142,7 +142,7 @@ class Twitter
         }
         $oauthOptions['siteUrl'] = static::OAUTH_BASE_URI;
 
-        $httpClientOptions = array();
+        $httpClientOptions = [];
         if (isset($options['httpClientOptions'])) {
             $httpClientOptions = $options['httpClientOptions'];
         } elseif (isset($options['http_client_options'])) {
@@ -160,7 +160,11 @@ class Twitter
         }
         if ($accessToken && $accessToken instanceof OAuth\Token\Access) {
             $oauthOptions['token'] = $accessToken;
-            $this->setHttpClient($accessToken->getHttpClient($oauthOptions, static::OAUTH_BASE_URI, $httpClientOptions));
+            $this->setHttpClient($accessToken->getHttpClient(
+                $oauthOptions,
+                static::OAUTH_BASE_URI,
+                $httpClientOptions
+            ));
             return;
         }
 
@@ -194,7 +198,7 @@ class Twitter
     {
         $type = strtolower($type);
         $type = str_replace('_', '', $type);
-        if (!in_array($type, $this->methodTypes)) {
+        if (! in_array($type, $this->methodTypes)) {
             throw new Exception\DomainException(
                 'Invalid method type "' . $type . '"'
             );
@@ -214,7 +218,7 @@ class Twitter
     public function __call($method, $params)
     {
         if (method_exists($this->oauthConsumer, $method)) {
-            $return = call_user_func_array(array($this->oauthConsumer, $method), $params);
+            $return = call_user_func_array([$this->oauthConsumer, $method], $params);
             if ($return instanceof OAuth\Token\Access) {
                 $this->setHttpClient($return->getHttpClient($this->options));
             }
@@ -228,13 +232,13 @@ class Twitter
 
         $test = str_replace('_', '', strtolower($method));
         $test = $this->methodType . $test;
-        if (!method_exists($this, $test)) {
+        if (! method_exists($this, $test)) {
             throw new Exception\BadMethodCallException(
                 'Invalid method "' . $test . '"'
             );
         }
 
-        return call_user_func_array(array($this, $test), $params);
+        return call_user_func_array([$this, $test], $params);
     }
 
     /**
@@ -246,7 +250,7 @@ class Twitter
     public function setHttpClient(Http\Client $client)
     {
         $this->httpClient = $client;
-        $this->httpClient->setHeaders(array('Accept-Charset' => 'ISO-8859-1,utf-8'));
+        $this->httpClient->setHeaders(['Accept-Charset' => 'ISO-8859-1,utf-8']);
         return $this;
     }
 
@@ -341,7 +345,7 @@ class Twitter
     {
         $this->init();
         $path     = 'blocks/create';
-        $params   = $this->createUserParameter($id, array());
+        $params   = $this->createUserParameter($id, []);
         $response = $this->post($path, $params);
         return new Response($response);
     }
@@ -357,7 +361,7 @@ class Twitter
     {
         $this->init();
         $path   = 'blocks/destroy';
-        $params = $this->createUserParameter($id, array());
+        $params = $this->createUserParameter($id, []);
         $response = $this->post($path, $params);
         return new Response($response);
     }
@@ -365,7 +369,8 @@ class Twitter
     /**
      * Returns an array of user ids that the authenticating user is blocking
      *
-     * @param  integer $cursor  Optional. Specifies the cursor position at which to begin listing ids; defaults to first "page" of results.
+     * @param  integer $cursor  Optional. Specifies the cursor position at
+     *     which to begin listing ids; defaults to first "page" of results.
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
@@ -373,14 +378,15 @@ class Twitter
     {
         $this->init();
         $path = 'blocks/ids';
-        $response = $this->get($path, array('cursor' => $cursor));
+        $response = $this->get($path, ['cursor' => $cursor]);
         return new Response($response);
     }
 
     /**
      * Returns an array of user objects that the authenticating user is blocking
      *
-     * @param  integer $cursor  Optional. Specifies the cursor position at which to begin listing ids; defaults to first "page" of results.
+     * @param  integer $cursor  Optional. Specifies the cursor position at
+     *     which to begin listing ids; defaults to first "page" of results.
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
@@ -388,7 +394,7 @@ class Twitter
     {
         $this->init();
         $path = 'blocks/list';
-        $response = $this->get($path, array('cursor' => $cursor));
+        $response = $this->get($path, ['cursor' => $cursor]);
         return new Response($response);
     }
 
@@ -404,7 +410,7 @@ class Twitter
     {
         $this->init();
         $path     = 'direct_messages/destroy';
-        $params   = array('id' => $this->validInteger($id));
+        $params   = ['id' => $this->validInteger($id)];
         $response = $this->post($path, $params);
         return new Response($response);
     }
@@ -424,11 +430,11 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function directMessagesMessages(array $options = array())
+    public function directMessagesMessages(array $options = [])
     {
         $this->init();
         $path   = 'direct_messages';
-        $params = array();
+        $params = [];
         foreach ($options as $key => $value) {
             switch (strtolower($key)) {
                 case 'count':
@@ -481,7 +487,7 @@ class Twitter
             );
         }
 
-        $params         = $this->createUserParameter($user, array());
+        $params         = $this->createUserParameter($user, []);
         $params['text'] = $text;
         $response       = $this->post($path, $params);
         return new Response($response);
@@ -502,11 +508,11 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function directMessagesSent(array $options = array())
+    public function directMessagesSent(array $options = [])
     {
         $this->init();
         $path   = 'direct_messages/sent';
-        $params = array();
+        $params = [];
         foreach ($options as $key => $value) {
             switch (strtolower($key)) {
                 case 'count':
@@ -544,7 +550,7 @@ class Twitter
     {
         $this->init();
         $path     = 'favorites/create';
-        $params   = array('id' => $this->validInteger($id));
+        $params   = ['id' => $this->validInteger($id)];
         $response = $this->post($path, $params);
         return new Response($response);
     }
@@ -561,7 +567,7 @@ class Twitter
     {
         $this->init();
         $path     = 'favorites/destroy';
-        $params   = array('id' => $this->validInteger($id));
+        $params   = ['id' => $this->validInteger($id)];
         $response = $this->post($path, $params);
         return new Response($response);
     }
@@ -582,11 +588,11 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function favoritesList(array $options = array())
+    public function favoritesList(array $options = [])
     {
         $this->init();
         $path = 'favorites/list';
-        $params = array();
+        $params = [];
         foreach ($options as $key => $value) {
             switch (strtolower($key)) {
                 case 'user_id':
@@ -624,16 +630,16 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function friendshipsCreate($id, array $params = array())
+    public function friendshipsCreate($id, array $params = [])
     {
         $this->init();
         $path    = 'friendships/create';
         $params  = $this->createUserParameter($id, $params);
-        $allowed = array(
+        $allowed = [
             'user_id'     => null,
             'screen_name' => null,
             'follow'      => null,
-        );
+        ];
         $params = array_intersect_key($params, $allowed);
         $response = $this->post($path, $params);
         return new Response($response);
@@ -651,7 +657,7 @@ class Twitter
     {
         $this->init();
         $path     = 'friendships/destroy';
-        $params   = $this->createUserParameter($id, array());
+        $params   = $this->createUserParameter($id, []);
         $response = $this->post($path, $params);
         return new Response($response);
     }
@@ -676,7 +682,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function searchTweets($query, array $options = array())
+    public function searchTweets($query, array $options = [])
     {
         $this->init();
         $path = 'search/tweets';
@@ -688,18 +694,18 @@ class Twitter
             );
         }
 
-        $params = array('q' => $query);
+        $params = ['q' => $query];
         foreach ($options as $key => $value) {
             switch (strtolower($key)) {
                 case 'geocode':
-                    if (!substr_count($value, ',') !== 2) {
+                    if (! substr_count($value, ',') !== 2) {
                         throw new Exception\InvalidArgumentException(
                             '"geocode" must be of the format "latitude,longitude,radius"'
                         );
                     }
                     list($latitude, $longitude, $radius) = explode(',', $value);
                     $radius = trim($radius);
-                    if (!preg_match('/^\d+(mi|km)$/', $radius)) {
+                    if (! preg_match('/^\d+(mi|km)$/', $radius)) {
                         throw new Exception\InvalidArgumentException(
                             'Radius segment of "geocode" must be of the format "[unit](mi|km)"'
                         );
@@ -726,7 +732,7 @@ class Twitter
                     break;
                 case 'result_type':
                     $value = strtolower($value);
-                    if (!in_array($value, array('mixed', 'recent', 'popular'))) {
+                    if (! in_array($value, ['mixed', 'recent', 'popular'])) {
                         throw new Exception\InvalidArgumentException(
                             'result_type must be one of "mixed", "recent", or "popular"'
                         );
@@ -743,7 +749,7 @@ class Twitter
                     $params['count'] = $value;
                     break;
                 case 'until':
-                    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+                    if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
                         throw new Exception\InvalidArgumentException(
                             '"until" must be a date in the format YYYY-MM-DD'
                         );
@@ -800,11 +806,11 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusesHomeTimeline(array $options = array())
+    public function statusesHomeTimeline(array $options = [])
     {
         $this->init();
         $path = 'statuses/home_timeline';
-        $params = array();
+        $params = [];
         foreach ($options as $key => $value) {
             switch (strtolower($key)) {
                 case 'count':
@@ -817,7 +823,7 @@ class Twitter
                     $params['max_id'] = $this->validInteger($value);
                     break;
                 case 'trim_user':
-                    if (in_array($value, array(true, 'true', 't', 1, '1'))) {
+                    if (in_array($value, [true, 'true', 't', 1, '1'])) {
                         $value = true;
                     } else {
                         $value = false;
@@ -857,11 +863,11 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusesMentionsTimeline(array $options = array())
+    public function statusesMentionsTimeline(array $options = [])
     {
         $this->init();
         $path   = 'statuses/mentions_timeline';
-        $params = array();
+        $params = [];
         foreach ($options as $key => $value) {
             switch (strtolower($key)) {
                 case 'count':
@@ -874,7 +880,7 @@ class Twitter
                     $params['max_id'] = $this->validInteger($value);
                     break;
                 case 'trim_user':
-                    if (in_array($value, array(true, 'true', 't', 1, '1'))) {
+                    if (in_array($value, [true, 'true', 't', 1, '1'])) {
                         $value = true;
                     } else {
                         $value = false;
@@ -955,7 +961,7 @@ class Twitter
             );
         }
 
-        $params = array('status' => $status);
+        $params = ['status' => $status];
         $inReplyToStatusId = $this->validInteger($inReplyToStatusId);
         if ($inReplyToStatusId) {
             $params['in_reply_to_status_id'] = $inReplyToStatusId;
@@ -982,11 +988,11 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusesUserTimeline(array $options = array())
+    public function statusesUserTimeline(array $options = [])
     {
         $this->init();
         $path = 'statuses/user_timeline';
-        $params = array();
+        $params = [];
         foreach ($options as $key => $value) {
             switch (strtolower($key)) {
                 case 'user_id':
@@ -1005,7 +1011,7 @@ class Twitter
                     $params['max_id'] = $this->validInteger($value);
                     break;
                 case 'trim_user':
-                    if (in_array($value, array(true, 'true', 't', 1, '1'))) {
+                    if (in_array($value, [true, 'true', 't', 1, '1'])) {
                         $value = true;
                     } else {
                         $value = false;
@@ -1043,7 +1049,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function usersSearch($query, array $options = array())
+    public function usersSearch($query, array $options = [])
     {
         $this->init();
         $path = 'users/search';
@@ -1055,7 +1061,7 @@ class Twitter
             );
         }
 
-        $params = array('q' => $query);
+        $params = ['q' => $query];
         foreach ($options as $key => $value) {
             switch (strtolower($key)) {
                 case 'count':
@@ -1094,7 +1100,7 @@ class Twitter
     {
         $this->init();
         $path     = 'users/show';
-        $params   = $this->createUserParameter($id, array());
+        $params   = $this->createUserParameter($id, []);
         $response = $this->get($path, $params);
         return new Response($response);
     }
@@ -1107,7 +1113,7 @@ class Twitter
      */
     protected function init()
     {
-        if (!$this->isAuthorised() && $this->getUsername() !== null) {
+        if (! $this->isAuthorised() && $this->getUsername() !== null) {
             throw new Exception\DomainException(
                 'Twitter session is unauthorised. You need to initialize '
                 . __CLASS__ . ' with an OAuth Access Token or use '
@@ -1149,11 +1155,12 @@ class Twitter
      */
     protected function validateScreenName($name)
     {
-        if (!preg_match('/^[a-zA-Z0-9_]{0,20}$/', $name)) {
+        if (! preg_match('/^[a-zA-Z0-9_]{0,20}$/', $name)) {
             throw new Exception\InvalidArgumentException(
                 'Screen name, "' . $name
                 . '" should only contain alphanumeric characters and'
-                . ' underscores, and not exceed 15 characters.');
+                . ' underscores, and not exceed 15 characters.'
+            );
         }
         return $name;
     }
@@ -1184,7 +1191,7 @@ class Twitter
      * @throws Http\Client\Exception\ExceptionInterface
      * @return Http\Response
      */
-    protected function get($path, array $query = array())
+    protected function get($path, array $query = [])
     {
         $client = $this->getHttpClient();
         $this->prepare($path, $client);
