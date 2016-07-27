@@ -125,7 +125,6 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
 
     public function testResetsHttpClientOnReceiptOfAccessTokenToOauthClient()
     {
-        $this->markTestIncomplete('Problem with resolving classes for mocking');
         $oauth = $this->getMockBuilder('ZendOAuth\Consumer', [], [], '', false)->getMock();
         $client = $this->getMockBuilder('ZendOAuth\Client', [], [], '', false)
             ->disableOriginalConstructor()
@@ -133,7 +132,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $token = $this->getMockBuilder('ZendOAuth\Token\Access', [], [], '', false)->getMock();
         $token->expects($this->once())->method('getHttpClient')->will($this->returnValue($client));
         $oauth->expects($this->once())->method('getAccessToken')->will($this->returnValue($token));
-        $client->expects($this->once())->method('setHeaders')->with('Accept-Charset', 'ISO-8859-1,utf-8');
+        $client->expects($this->once())->method('setHeaders')->with(['Accept-Charset'=> 'ISO-8859-1,utf-8']);
 
         $twitter = new Twitter\Twitter([], $oauth);
         $twitter->getAccessToken([], $this->getMockBuilder('ZendOAuth\Token\Request')->getMock());
@@ -546,7 +545,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             $this->stubTwitter(
                 'users/show.json',
                 Http\Request::METHOD_GET,
-                null,
+                'users.show.JuicyBurger661.json',
                 ['screen_name' => 'JuicyBurger661']
             )
         );
@@ -562,12 +561,12 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             $this->stubTwitter(
                 'users/show.json',
                 Http\Request::METHOD_GET,
-                null,
-                ['user_id' => 137307825]
+                'users.show.mwop.json',
+                ['user_id' => 9453382]
             )
         );
-        //$id as string
-        $twitter->users->show('137307825');
+        // $id as string
+        $twitter->users->show('9453382');
     }
 
     public function testUsersShowAcceptsIdAsIntegerArgument()
@@ -578,12 +577,12 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             $this->stubTwitter(
                 'users/show.json',
                 Http\Request::METHOD_GET,
-                null,
-                ['user_id' => 137307825]
+                'users.show.mwop.json',
+                ['user_id' => 9453382]
             )
         );
-        //$id as integer
-        $twitter->users->show(137307825);
+        // $id as integer
+        $twitter->users->show(9453382);
     }
 
     public function testBlockingIds()
@@ -698,7 +697,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
       */
     public function testAdapterAlwaysReachableIfSpecified($config, $adapter)
     {
-        $twitter = new \ZendService\Twitter\Twitter($config);
+        $twitter = new Twitter\Twitter($config);
         $this->assertSame($adapter, $twitter->getHttpClient()->getAdapter());
     }
 }

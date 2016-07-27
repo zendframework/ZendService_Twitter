@@ -1,0 +1,97 @@
+{
+	"id": 210163900,
+	"id_str": "210163900",
+	"name": "Juicy Burger",
+	"screen_name": "JuicyBurger661",
+	"location": "Bakersfield Ca",
+	"profile_location": null,
+	"description": "FRESH 100% Harris Ranch Beef. FRESH local ingredients. REAL Dreyers brand Ice Cream Scoops & Milkshakes.",
+	"url": "http://t.co/dMrGUwLgFD",
+	"entities": {
+		"url": {
+			"urls": [{
+				"url": "http://t.co/dMrGUwLgFD",
+				"expanded_url": "http://www.JuicyBurger.com",
+				"display_url": "JuicyBurger.com",
+				"indices": [
+					0,
+					22
+				]
+			}]
+		},
+		"description": {
+			"urls": []
+		}
+	},
+	"protected": false,
+	"followers_count": 46,
+	"friends_count": 33,
+	"listed_count": 4,
+	"created_at": "Sat Oct 30 18:38:59 +0000 2010",
+	"favourites_count": 0,
+	"utc_offset": null,
+	"time_zone": null,
+	"geo_enabled": false,
+	"verified": false,
+	"statuses_count": 387,
+	"lang": "en",
+	"status": {
+		"created_at": "Sat Jun 25 04:45:34 +0000 2016",
+		"id": 746564970435981300,
+		"id_str": "746564970435981312",
+		"text": "Come in to our downtown location and try out our 100% hand scooped milkshakes!!! We have vanilla, chocolate,... https://t.co/Qwg5qzSL7W",
+		"truncated": false,
+		"entities": {
+			"hashtags": [],
+			"symbols": [],
+			"user_mentions": [],
+			"urls": [{
+				"url": "https://t.co/Qwg5qzSL7W",
+				"expanded_url": "http://fb.me/3geD9qAnS",
+				"display_url": "fb.me/3geD9qAnS",
+				"indices": [
+					112,
+					135
+				]
+			}]
+		},
+		"source": "<a href='http://www.facebook.com/twitter' rel='nofollow'>Facebook</a>",
+		"in_reply_to_status_id": null,
+		"in_reply_to_status_id_str": null,
+		"in_reply_to_user_id": null,
+		"in_reply_to_user_id_str": null,
+		"in_reply_to_screen_name": null,
+		"geo": null,
+		"coordinates": null,
+		"place": null,
+		"contributors": null,
+		"is_quote_status": false,
+		"retweet_count": 0,
+		"favorite_count": 0,
+		"favorited": false,
+		"retweeted": false,
+		"possibly_sensitive": false,
+		"lang": "en"
+	},
+	"contributors_enabled": false,
+	"is_translator": false,
+	"is_translation_enabled": false,
+	"profile_background_color": "AB1C09",
+	"profile_background_image_url": "http://pbs.twimg.com/profile_background_images/762500920/7d3788a0690ec3c16e0599d1f1a6b106.jpeg",
+	"profile_background_image_url_https": "https://pbs.twimg.com/profile_background_images/762500920/7d3788a0690ec3c16e0599d1f1a6b106.jpeg",
+	"profile_background_tile": true,
+	"profile_image_url": "http://pbs.twimg.com/profile_images/3711454959/744cdb0cdd3464b3dcbf1da2557056df_normal.jpeg",
+	"profile_image_url_https": "https://pbs.twimg.com/profile_images/3711454959/744cdb0cdd3464b3dcbf1da2557056df_normal.jpeg",
+	"profile_banner_url": "https://pbs.twimg.com/profile_banners/210163900/1369541499",
+	"profile_link_color": "0084B4",
+	"profile_sidebar_border_color": "FFFFFF",
+	"profile_sidebar_fill_color": "DDEEF6",
+	"profile_text_color": "333333",
+	"profile_use_background_image": true,
+	"has_extended_profile": false,
+	"default_profile": false,
+	"default_profile_image": false,
+	"following": false,
+	"follow_request_sent": false,
+	"notifications": false
+}
