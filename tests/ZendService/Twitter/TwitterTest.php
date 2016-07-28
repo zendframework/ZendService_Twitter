@@ -65,6 +65,22 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         return $client;
     }
 
+    public function testRateLimit()
+    {
+       $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient($this->stubTwitter(
+            'users/show.json',
+            Http\Request::METHOD_GET,
+            'users.show.mwop.json',
+            ['screen_name' => 'mwop']
+        ));
+        $response = $twitter->users->show('mwop');
+        $this->assertInstanceOf('ZendService\Twitter\Response', $response);
+        $exists = $response->id !== null;
+        $this->assertTrue($exists);    	
+    }
+
+    
     /**
      * OAuth tests
      */

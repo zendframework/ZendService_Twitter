@@ -43,6 +43,12 @@ class Response
     protected $rawBody;
 
     /**
+     * @var array
+     */
+    protected $rateLimit;
+
+
+    /**
      * Constructor
      *
      * Assigns the HttpResponse to a property, as well as the body
@@ -55,6 +61,15 @@ class Response
     {
         $this->httpResponse = $httpResponse;
         $this->rawBody      = $httpResponse->getBody();
+
+        /*
+         * Get Rate Limiting info
+         */
+        $headers = $this->httpResponse->getHeaders()->toArray();
+        $this->rateLimit['limit']     = $headers['x-rate-limit-limit'];
+        $this->rateLimit['remaining'] = $headers['x-rate-limit-remaining'];
+        $this->rateLimit['reset']     = $headers['x-rate-limit-reset'];
+
         try {
             $jsonBody = Json::decode($this->rawBody, Json::TYPE_OBJECT);
             $this->jsonBody = $jsonBody;
@@ -151,5 +166,10 @@ class Response
     public function toValue()
     {
         return $this->jsonBody;
+    }
+
+    public function getRateLimit()
+    {
+    	return $this->rateLimit;
     }
 }
