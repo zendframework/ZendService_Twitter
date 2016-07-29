@@ -61,16 +61,16 @@ class Response
     {
         $this->httpResponse = $httpResponse;
 
-        if ( ! is_null($httpResponse) and ! empty($httpResponse->getBody())) {
+        if (! is_null($httpResponse) and ! empty($httpResponse->getBody())) {
             $this->populate($httpResponse);
         }
     }
 
     protected function setRateLimit($headers = [])
     {
-        $this->rateLimit['limit'] = isset($headers['x-rate-limit-limit']) ? $headers['x-rate-limit-limit'] :0;
-        $this->rateLimit['remaining'] = isset($headers['x-rate-limit-remaining']) ? $headers['x-rate-limit-remaining'] :0;
-        $this->rateLimit['reset'] = isset($headers['x-rate-limit-reset']) ? $headers['x-rate-limit-reset'] :0;
+        $this->rateLimit['limit'] = isset($headers['x-rate-limit-limit']) ? $headers['x-rate-limit-limit'] : 0;
+        $this->rateLimit['remaining'] = isset($headers['x-rate-limit-remaining']) ? $headers['x-rate-limit-remaining'] : 0;
+        $this->rateLimit['reset'] = isset($headers['x-rate-limit-reset']) ? $headers['x-rate-limit-reset'] : 0;
         return;
     }
 
@@ -176,7 +176,7 @@ class Response
      * constructor, or it can be called later.
      *
      */
-    public function populate( $httpResponse = null )
+    public function populate($httpResponse = null)
     {
 
         if (is_null($httpResponse)) {
@@ -188,8 +188,8 @@ class Response
 
         $headers = $this->httpResponse->getHeaders();
 
-        if ( ! is_null($headers) ) {
-            $headers= $headers->toArray();
+        if (! is_null($headers)) {
+            $headers = $headers->toArray();
         } else {
             $headers = [];
         }

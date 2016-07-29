@@ -122,16 +122,17 @@ class Twitter
      * @param  null|OAuth\Consumer $consumer
      * @param  null|Http\Client $httpClient
      */
-    public function __construct($options = null, 
-    	                        OAuth\Consumer $consumer = null, 
-    	                        Http\Client $httpClient = null, 
-    	                        Response $response = null)
-    {    	
-    	if (is_null($response)) {
-    		$this->twitterResponse = new Response($httpClient);
-    	} else {
-    		$this->twitterResponse = $response;
-    	}
+    public function __construct(
+        $options = null,
+        OAuth\Consumer $consumer = null,
+        Http\Client $httpClient = null,
+        Response $response = null
+    ) {
+        if (is_null($response)) {
+            $this->twitterResponse = new Response($httpClient);
+        } else {
+            $this->twitterResponse = $response;
+        }
 
 
         if ($options instanceof Traversable) {
@@ -1418,6 +1419,5 @@ class Twitter
         $response = $this->get($path, $params);
         return new Response($response);
     }
-
-
+    
 }
