@@ -57,20 +57,20 @@ class Response
      * @param  HttpResponse $httpResponse
      * @throws Exception\DomainException if unable to decode JSON response
      */
-    public function __construct(HttpResponse $httpResponse=null)
+    public function __construct(HttpResponse $httpResponse = null)
     {
-    	$this->httpResponse = $httpResponse;
+        $this->httpResponse = $httpResponse;
 
-    	if (!is_null($httpResponse) and !empty($httpResponse->getBody())) {
-    		$this->populate($httpResponse);
-    	}
+        if ( ! is_null($httpResponse) and ! empty($httpResponse->getBody())) {
+            $this->populate($httpResponse);
+        }
     }
 
     protected function setRateLimit($headers = [])
     {
-        $this->rateLimit['limit']     = isset($headers['x-rate-limit-limit'])     ? $headers['x-rate-limit-limit']     :0;
+        $this->rateLimit['limit'] = isset($headers['x-rate-limit-limit']) ? $headers['x-rate-limit-limit'] :0;
         $this->rateLimit['remaining'] = isset($headers['x-rate-limit-remaining']) ? $headers['x-rate-limit-remaining'] :0;
-        $this->rateLimit['reset']     = isset($headers['x-rate-limit-reset'])     ? $headers['x-rate-limit-reset']     :0;
+        $this->rateLimit['reset'] = isset($headers['x-rate-limit-reset']) ? $headers['x-rate-limit-reset'] :0;
         return;
     }
 
@@ -168,30 +168,30 @@ class Response
      */
     public function getRateLimit()
     {
-    	return $this->rateLimit;
+        return $this->rateLimit;
     }
 
     /**
-     * Populates the object with info. This can possibly called from the 
-     * constructor, or it can be called later. 
+     * Populates the object with info. This can possibly called from the
+     * constructor, or it can be called later.
      *
      */
-    public function populate($httpResponse=null) 
+    public function populate( $httpResponse = null )
     {
 
-    	if (is_null($httpResponse)) {
-    		$httpResponse = $this->httpResponse;
-    	}
+        if (is_null($httpResponse)) {
+            $httpResponse = $this->httpResponse;
+        }
 
         $this->httpResponse = $httpResponse;
         $this->rawBody      = $httpResponse->getBody();
 
         $headers = $this->httpResponse->getHeaders();
 
-        if (!is_null($headers)) {
-        	$headers= $headers->toArray();
+        if ( ! is_null($headers) ) {
+            $headers= $headers->toArray();
         } else {
-        	$headers = [];
+            $headers = [];
         }
 
         $this->setRateLimit($headers);
