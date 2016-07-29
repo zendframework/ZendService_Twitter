@@ -75,6 +75,13 @@ class Twitter
     protected $oauthConsumer = null;
 
     /**
+     * Response
+     *
+     * @var Twitter\Response
+     */
+    protected $twitterResponse = null;
+
+    /**
      * Types of API methods
      *
      * @var array
@@ -115,8 +122,18 @@ class Twitter
      * @param  null|OAuth\Consumer $consumer
      * @param  null|Http\Client $httpClient
      */
-    public function __construct($options = null, OAuth\Consumer $consumer = null, Http\Client $httpClient = null)
-    {
+    public function __construct($options = null, 
+    	                        OAuth\Consumer $consumer = null, 
+    	                        Http\Client $httpClient = null, 
+    	                        Response $response = null)
+    {    	
+    	if (is_null($response)) {
+    		$this->twitterResponse = new Response($httpClient);
+    	} else {
+    		$this->twitterResponse = $response;
+    	}
+
+
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
         }
@@ -318,7 +335,8 @@ class Twitter
     {
         $this->init();
         $response = $this->get('account/verify_credentials');
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -333,7 +351,8 @@ class Twitter
     {
         $this->init();
         $response = $this->get('application/rate_limit_status');
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -350,7 +369,8 @@ class Twitter
         $path     = 'blocks/create';
         $params   = $this->createUserParameter($id, []);
         $response = $this->post($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -366,7 +386,8 @@ class Twitter
         $path   = 'blocks/destroy';
         $params = $this->createUserParameter($id, []);
         $response = $this->post($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -382,7 +403,8 @@ class Twitter
         $this->init();
         $path = 'blocks/ids';
         $response = $this->get($path, ['cursor' => $cursor]);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -398,7 +420,8 @@ class Twitter
         $this->init();
         $path = 'blocks/list';
         $response = $this->get($path, ['cursor' => $cursor]);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -415,7 +438,8 @@ class Twitter
         $path     = 'direct_messages/destroy';
         $params   = ['id' => $this->validInteger($id)];
         $response = $this->post($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -460,7 +484,8 @@ class Twitter
             }
         }
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -493,7 +518,8 @@ class Twitter
         $params         = $this->createUserParameter($user, []);
         $params['text'] = $text;
         $response       = $this->post($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -538,7 +564,8 @@ class Twitter
             }
         }
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -555,7 +582,8 @@ class Twitter
         $path     = 'favorites/create';
         $params   = ['id' => $this->validInteger($id)];
         $response = $this->post($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -572,7 +600,8 @@ class Twitter
         $path     = 'favorites/destroy';
         $params   = ['id' => $this->validInteger($id)];
         $response = $this->post($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -621,7 +650,8 @@ class Twitter
             }
         }
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -645,7 +675,8 @@ class Twitter
         ];
         $params = array_intersect_key($params, $allowed);
         $response = $this->post($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -662,7 +693,8 @@ class Twitter
         $path     = 'friendships/destroy';
         $params   = $this->createUserParameter($id, []);
         $response = $this->post($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -773,7 +805,8 @@ class Twitter
             }
         }
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -789,7 +822,8 @@ class Twitter
         $this->init();
         $path = 'statuses/destroy/' . $this->validInteger($id);
         $response = $this->post($path);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -847,7 +881,8 @@ class Twitter
             }
         }
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -901,7 +936,8 @@ class Twitter
             }
         }
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -916,7 +952,8 @@ class Twitter
         $this->init();
         $path = 'statuses/sample';
         $response = $this->get($path);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -932,7 +969,8 @@ class Twitter
         $this->init();
         $path = 'statuses/show/' . $this->validInteger($id);
         $response = $this->get($path);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -970,7 +1008,8 @@ class Twitter
             $params['in_reply_to_status_id'] = $inReplyToStatusId;
         }
         $response = $this->post($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -1035,7 +1074,8 @@ class Twitter
             }
         }
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -1087,7 +1127,8 @@ class Twitter
             }
         }
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
 
@@ -1105,7 +1146,8 @@ class Twitter
         $path     = 'users/show';
         $params   = $this->createUserParameter($id, []);
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -1338,7 +1380,8 @@ class Twitter
     }
 
     /**
-     * Returns a list of IDs of the current logged in user's friends or the friends of the screen name passed in as
+     * Returns a list of IDs of the current logged in user's friends or the 
+     * friends of the screen name passed in as
      * part of the parameters array.
      *
      * Returns the next cursor if there are more to be returned.

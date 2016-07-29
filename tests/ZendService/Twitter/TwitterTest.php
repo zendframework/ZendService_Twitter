@@ -51,23 +51,44 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($client));
         $client->expects($this->once())->method('setUri')
             ->with('https://api.twitter.com/1.1/' . $path);
+
+
         $response = $this->getMockBuilder('Zend\Http\Response', [], [], '', false)->getMock();
         if (! is_null($params)) {
             $setter = 'setParameter' . ucfirst(strtolower($method));
             $client->expects($this->once())->method($setter)->with($params);
         }
+
         $client->expects($this->once())->method('send')->with()
             ->will($this->returnValue($response));
+
         $response->expects($this->any())->method('getBody')
             ->will($this->returnValue(
                 isset($responseFile) ? file_get_contents(__DIR__ . '/_files/' . $responseFile) : '{}'
             ));
+
+
         return $client;
     }
 
     public function testRateLimit()
     {
-       $twitter = new Twitter\Twitter();
+
+        $response = $this->getMockBuilder('Zend\Http\Response', [], [], '', false)->getMock();
+
+        $rateLimits=['limit'     => rand(1,100),
+                     'remaining' => rand(1,100),
+                     'reset'     => rand(1,100)];
+
+        $twitterResponse = $this->getMockBuilder('ZendService\Twitter\Response')
+                                ->enableOriginalConstructor()
+                                ->setConstructorArgs([$response])
+                                ->getMock();
+        $twitterResponse->expects($this->any())
+                        ->method('getRateLimit')
+                        ->will($this->returnValue($rateLimits));
+
+        $twitter = new Twitter\Twitter(null,null,null,$twitterResponse);
         $twitter->setHttpClient($this->stubTwitter(
             'users/show.json',
             Http\Request::METHOD_GET,
@@ -76,11 +97,19 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         ));
         $response = $twitter->users->show('mwop');
         $this->assertInstanceOf('ZendService\Twitter\Response', $response);
-        $exists = $response->id !== null;
-        $this->assertTrue($exists);    	
+        $headers = $response->getRateLimit();
+        $this->assertTrue(is_array($headers));
+        $this->assertCount(3,$headers);
+        $this->assertArrayHasKey('limit',$headers);
+        $this->assertArrayHasKey('remaining',$headers);
+        $this->assertArrayHasKey('reset',$headers);
+        $this->assertTrue($headers['limit']     === $rateLimits['limit']);
+        $this->assertTrue($headers['remaining'] === $rateLimits['remaining']);
+        $this->assertTrue($headers['reset']     === $rateLimits['reset']);
+        return;
     }
 
-    
+
     /**
      * OAuth tests
      */
@@ -662,6 +691,37 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         ));
         $response = $twitter->users->search('Zend');
         $this->assertTrue($response instanceof TwitterResponse);
+    }
+
+    public function testListsSubscribers()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubTwitter(
+            'lists/subscribers.json',
+            Http\Request::METHOD_GET,
+            'lists.subscribers.json'
+        ));
+        $response = $twitter->lists->subscribers('devzone');
+        $this->assertTrue($response instanceof TwitterResponse);
+        $payload = $response->toValue();
+        $this->assertCount(1,$payload->users);
+        $this->assertEquals(4795561,$payload->users[0]->id);
+    }
+
+    public function testFriendsIds()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubTwitter(
+            'users/search.json',
+            Http\Request::METHOD_GET,
+            'users.search.json',
+            ['q' => 'Zend']
+        ));
+        $response = $twitter->users->search('Zend');
+        $this->assertTrue($response instanceof TwitterResponse);
+        $payload = $response->toValue();
+        $this->assertCount(20,$payload);
+        $this->assertEquals(15012215,$payload[0]->id);
     }
 
     public function providerAdapterAlwaysReachableIfSpecifiedConfiguration()

@@ -57,28 +57,21 @@ class Response
      * @param  HttpResponse $httpResponse
      * @throws Exception\DomainException if unable to decode JSON response
      */
-    public function __construct(HttpResponse $httpResponse)
+    public function __construct(HttpResponse $httpResponse=null)
     {
-        $this->httpResponse = $httpResponse;
-        $this->rawBody      = $httpResponse->getBody();
+    	$this->httpResponse = $httpResponse;
 
-        /*
-         * Get Rate Limiting info
-         */
-        $headers = $this->httpResponse->getHeaders()->toArray();
-        $this->rateLimit['limit']     = $headers['x-rate-limit-limit'];
-        $this->rateLimit['remaining'] = $headers['x-rate-limit-remaining'];
-        $this->rateLimit['reset']     = $headers['x-rate-limit-reset'];
+    	if (!is_null($httpResponse) and !empty($httpResponse->getBody())) {
+    		$this->populate($httpResponse);
+    	}
+    }
 
-        try {
-            $jsonBody = Json::decode($this->rawBody, Json::TYPE_OBJECT);
-            $this->jsonBody = $jsonBody;
-        } catch (JsonException $e) {
-            throw new Exception\DomainException(sprintf(
-                'Unable to decode response from twitter: %s',
-                $e->getMessage()
-            ), 0, $e);
-        }
+    protected function setRateLimit($headers = [])
+    {
+        $this->rateLimit['limit']     = isset($headers['x-rate-limit-limit'])     ? $headers['x-rate-limit-limit']     :0;
+        $this->rateLimit['remaining'] = isset($headers['x-rate-limit-remaining']) ? $headers['x-rate-limit-remaining'] :0;
+        $this->rateLimit['reset']     = isset($headers['x-rate-limit-reset'])     ? $headers['x-rate-limit-reset']     :0;
+        return;
     }
 
     /**
@@ -168,8 +161,51 @@ class Response
         return $this->jsonBody;
     }
 
+    /**
+     * Retun the array of response rate info
+     *
+     * @return array
+     */
     public function getRateLimit()
     {
     	return $this->rateLimit;
+    }
+
+    /**
+     * Populates the object with info. This can possibly called from the 
+     * constructor, or it can be called later. 
+     *
+     */
+    public function populate($httpResponse=null) 
+    {
+
+    	if (is_null($httpResponse)) {
+    		$httpResponse = $this->httpResponse;
+    	}
+
+        $this->httpResponse = $httpResponse;
+        $this->rawBody      = $httpResponse->getBody();
+
+        $headers = $this->httpResponse->getHeaders();
+
+        if (!is_null($headers)) {
+        	$headers= $headers->toArray();
+        } else {
+        	$headers = [];
+        }
+
+        $this->setRateLimit($headers);
+
+        try {
+            $jsonBody = Json::decode($this->rawBody, Json::TYPE_OBJECT);
+            $this->jsonBody = $jsonBody;
+        } catch (JsonException $e) {
+            throw new Exception\DomainException(sprintf(
+                'Unable to decode response from twitter: %s',
+                $e->getMessage()
+            ), 0, $e);
+        }
+
+        return;
     }
 }
