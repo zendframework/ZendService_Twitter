@@ -76,9 +76,9 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
 
         $response = $this->getMockBuilder('Zend\Http\Response', [], [], '', false)->getMock();
 
-        $rateLimits=['limit'     => rand(1,100),
-                     'remaining' => rand(1,100),
-                     'reset'     => rand(1,100)];
+        $rateLimits = ['limit'     => rand(1, 100),
+                       'remaining' => rand(1, 100),
+                       'reset'     => rand(1, 100)];
 
         $twitterResponse = $this->getMockBuilder('ZendService\Twitter\Response')
                                 ->enableOriginalConstructor()
@@ -88,7 +88,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
                         ->method('getRateLimit')
                         ->will($this->returnValue($rateLimits));
 
-        $twitter = new Twitter\Twitter(null,null,null,$twitterResponse);
+        $twitter = new Twitter\Twitter(null, null, null, $twitterResponse);
         $twitter->setHttpClient($this->stubTwitter(
             'users/show.json',
             Http\Request::METHOD_GET,
@@ -99,13 +99,13 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('ZendService\Twitter\Response', $response);
         $headers = $response->getRateLimit();
         $this->assertTrue(is_array($headers));
-        $this->assertCount(3,$headers);
-        $this->assertArrayHasKey('limit',$headers);
-        $this->assertArrayHasKey('remaining',$headers);
-        $this->assertArrayHasKey('reset',$headers);
-        $this->assertTrue($headers['limit']     === $rateLimits['limit']);
+        $this->assertCount(3, $headers);
+        $this->assertArrayHasKey('limit', $headers);
+        $this->assertArrayHasKey('remaining', $headers);
+        $this->assertArrayHasKey('reset', $headers);
+        $this->assertTrue($headers['limit'] === $rateLimits['limit']);
         $this->assertTrue($headers['remaining'] === $rateLimits['remaining']);
-        $this->assertTrue($headers['reset']     === $rateLimits['reset']);
+        $this->assertTrue($headers['reset'] === $rateLimits['reset']);
         return;
     }
 
@@ -704,8 +704,8 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $response = $twitter->lists->subscribers('devzone');
         $this->assertTrue($response instanceof TwitterResponse);
         $payload = $response->toValue();
-        $this->assertCount(1,$payload->users);
-        $this->assertEquals(4795561,$payload->users[0]->id);
+        $this->assertCount(1, $payload->users);
+        $this->assertEquals(4795561, $payload->users[0]->id);
     }
 
     public function testFriendsIds()
@@ -720,8 +720,8 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $response = $twitter->users->search('Zend');
         $this->assertTrue($response instanceof TwitterResponse);
         $payload = $response->toValue();
-        $this->assertCount(20,$payload);
-        $this->assertEquals(15012215,$payload[0]->id);
+        $this->assertCount(20, $payload);
+        $this->assertEquals(15012215, $payload[0]->id);
     }
 
     public function providerAdapterAlwaysReachableIfSpecifiedConfiguration()
