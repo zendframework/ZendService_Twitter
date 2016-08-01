@@ -154,7 +154,7 @@ class Response
     }
 
     /**
-     * Retun the array of response rate info
+     * Retun the RateLimit object
      *
      * @return RateLimit
      */
