@@ -1322,7 +1322,8 @@ class Twitter
         $path = 'followers/ids';
         $params = $this->createUserParameter($id, $params);
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -1340,7 +1341,8 @@ class Twitter
         $path = 'lists/memberships';
         $params = $this->createUserParameter($id, $params);
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -1358,7 +1360,8 @@ class Twitter
         $path = 'friendships/lookup';
         $params = $this->createUserParameter($id, $params);
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -1377,7 +1380,8 @@ class Twitter
         // $params = $this->createUserParameter($id, $params);
         $params['user_id'] = $id;
         $response = $this->post($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
     /**
@@ -1397,7 +1401,8 @@ class Twitter
         $path = 'friends/ids';
         $params = $this->createUserParameter($id, $params);
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 
 
@@ -1417,6 +1422,7 @@ class Twitter
         $path   = 'lists/subscribers';
         $params   = $this->createUserParameter($id, $params);
         $response = $this->get($path, $params);
-        return new Response($response);
+        $this->twitterResponse->populate($response);
+        return $this->twitterResponse;
     }
 }
