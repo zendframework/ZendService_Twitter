@@ -73,7 +73,7 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         return $client;
     }
 
-    public function testNewRateLimit()
+    public function testRateLimitHeaders()
     {
 
         $rateLimits = ['x-rate-limit-limit'     => rand(1, 100),
@@ -111,8 +111,11 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'users.show.mwop.json',
             ['screen_name' => 'mwop']
         ));
+
         $finalResponse = $twitter->users->show('mwop');
+        
         $this->assertInstanceOf('ZendService\Twitter\Response', $finalResponse);
+        
         $rateLimit = $finalResponse->getRateLimit();
         $this->assertInstanceOf('ZendService\Twitter\RateLimit', $rateLimit);
         $this->assertTrue($rateLimit->limit === $rateLimits['x-rate-limit-limit']);
