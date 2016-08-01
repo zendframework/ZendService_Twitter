@@ -43,7 +43,7 @@ class Response
     protected $rawBody;
 
     /**
-     * @var array
+     * @var RateLimit
      */
     protected $rateLimit;
 
@@ -64,14 +64,6 @@ class Response
         if (! is_null($httpResponse) and ! empty($httpResponse->getBody())) {
             $this->populate($httpResponse);
         }
-    }
-
-    protected function setRateLimit($headers = [])
-    {
-        $this->rateLimit['limit'] = isset($headers['x-rate-limit-limit']) ? $headers['x-rate-limit-limit'] : 0;
-        $this->rateLimit['remaining'] = isset($headers['x-rate-limit-remaining']) ? $headers['x-rate-limit-remaining'] : 0;
-        $this->rateLimit['reset'] = isset($headers['x-rate-limit-reset']) ? $headers['x-rate-limit-reset'] : 0;
-        return;
     }
 
     /**
@@ -162,9 +154,9 @@ class Response
     }
 
     /**
-     * Retun the array of response rate info
+     * Retun the RateLimit object
      *
-     * @return array
+     * @return RateLimit
      */
     public function getRateLimit()
     {
@@ -186,15 +178,7 @@ class Response
         $this->httpResponse = $httpResponse;
         $this->rawBody      = $httpResponse->getBody();
 
-        $headers = $this->httpResponse->getHeaders();
-
-        if (! is_null($headers)) {
-            $headers = $headers->toArray();
-        } else {
-            $headers = [];
-        }
-
-        $this->setRateLimit($headers);
+        $this->rateLimit = new RateLimit($this->httpResponse->getHeaders());
 
         try {
             $jsonBody = Json::decode($this->rawBody, Json::TYPE_OBJECT);

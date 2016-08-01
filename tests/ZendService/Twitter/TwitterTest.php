@@ -13,6 +13,8 @@ namespace ZendTest\Twitter;
 use Zend\Http;
 use ZendService\Twitter;
 use ZendService\Twitter\Response as TwitterResponse;
+use ZendService\Twitter\RateLimit as RateLimit;
+
 use Zend\Http\Client\Adapter\Curl as CurlAdapter;
 
 /**
@@ -71,22 +73,36 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         return $client;
     }
 
-    public function testRateLimit()
+    public function testRateLimitHeaders()
     {
 
-        $response = $this->getMockBuilder('Zend\Http\Response', [], [], '', false)->getMock();
+        $rateLimits = ['x-rate-limit-limit'     => rand(1, 100),
+                       'x-rate-limit-remaining' => rand(1, 100),
+                       'x-rate-limit-reset'     => rand(1, 100)];
 
-        $rateLimits = ['limit'     => rand(1, 100),
-                       'remaining' => rand(1, 100),
-                       'reset'     => rand(1, 100)];
+        $headers = $this->getMockBuilder('Zend\Http\Headers', [], [], '', false)                         
+                         ->getMock();
+
+        $headers->expects($this->any())
+                ->method('toArray')
+                ->will($this->returnValue($rateLimits));
+                
+        $response = $this->getMockBuilder('Zend\Http\Response', [], [], '', false)                         
+                         ->getMock();
+
+        $response->expects($this->any())
+                ->method('getHeaders')
+                ->will($this->returnValue($headers));                       
+
 
         $twitterResponse = $this->getMockBuilder('ZendService\Twitter\Response')
                                 ->enableOriginalConstructor()
                                 ->setConstructorArgs([$response])
                                 ->getMock();
+        
         $twitterResponse->expects($this->any())
                         ->method('getRateLimit')
-                        ->will($this->returnValue($rateLimits));
+                        ->will($this->returnValue(new \ZendService\Twitter\RateLimit($headers)));
 
         $twitter = new Twitter\Twitter(null, null, null, $twitterResponse);
         $twitter->setHttpClient($this->stubTwitter(
@@ -95,17 +111,16 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             'users.show.mwop.json',
             ['screen_name' => 'mwop']
         ));
-        $response = $twitter->users->show('mwop');
-        $this->assertInstanceOf('ZendService\Twitter\Response', $response);
-        $headers = $response->getRateLimit();
-        $this->assertTrue(is_array($headers));
-        $this->assertCount(3, $headers);
-        $this->assertArrayHasKey('limit', $headers);
-        $this->assertArrayHasKey('remaining', $headers);
-        $this->assertArrayHasKey('reset', $headers);
-        $this->assertTrue($headers['limit'] === $rateLimits['limit']);
-        $this->assertTrue($headers['remaining'] === $rateLimits['remaining']);
-        $this->assertTrue($headers['reset'] === $rateLimits['reset']);
+
+        $finalResponse = $twitter->users->show('mwop');
+        
+        $this->assertInstanceOf('ZendService\Twitter\Response', $finalResponse);
+        
+        $rateLimit = $finalResponse->getRateLimit();
+        $this->assertInstanceOf('ZendService\Twitter\RateLimit', $rateLimit);
+        $this->assertTrue($rateLimit->limit === $rateLimits['x-rate-limit-limit']);
+        $this->assertTrue($rateLimit->remaining === $rateLimits['x-rate-limit-remaining']);
+        $this->assertTrue($rateLimit->reset === $rateLimits['x-rate-limit-reset']);
         return;
     }
 
