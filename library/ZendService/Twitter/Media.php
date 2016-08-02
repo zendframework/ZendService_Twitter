@@ -1,4 +1,12 @@
 <?php
+/**
+ * Zend Framework (http://framework.zend.com/)
+ *
+ * @link      http://github.com/zendframework/zf2 for the canonical source repository
+ * @copyright Copyright (c) 2005-2014 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @package   Zend_Service
+ */
 
 namespace ZendService\Twitter;
 
@@ -6,15 +14,51 @@ use Zend\Http\Client as Client;
 use ZendService\Twitter\Response as Response;
 
 
+/**
+ * Twitter Media Uploader base class
+ *
+ * @category   Zend
+ * @package    Zend_Service
+ * @subpackage Twitter
+ * @author Cal Evans <cal@calevans.com>
+ */
 Class Media
 {
 
+    /**
+     * Array of basic data to be stored by this class.
+     *
+     * @var Array
+     */
 	protected $data = [];
+
+    /**
+     * The number of bytes to send to Twitter at one time.
+     * @var Integer
+     */
 	protected $chunkSize = 1048576;
+
+    /**
+     * The base URI for this API call
+     *
+     * @var String
+     */
 	protected $baseUri = 'https://upload.twitter.com';
+
+    /**
+     * The API endpoint for all calls.
+     *
+     * @var String
+     */
 	protected $endPoint = '/1.1/media/upload.json';
 
 
+    /**
+     * Constructor
+     *
+     * @param  null|string $image_url
+     * @param  string $consumer
+     */
 	public function __construct($image_url = null, $media_type = '')
 	{
 		$this->data['image_url']='';
@@ -30,6 +74,14 @@ Class Media
 		}	
 	}
 
+
+    /**
+     * Main call into the upload workflow
+     *
+     * @param  Client $httpClient
+     * @return Twitter\Response
+     * @throws \Exception If the file can't be opened.
+     */
 	public function upload(Client $httpClient)
 	{
         $params = [];
@@ -58,11 +110,25 @@ Class Media
 		return $response;
 	}
 
+
+    /**
+     * Method overloading
+     *
+     * @param  string $key
+     * @return mixed
+     */
 	public function __get($key)
 	{
 		return isset($this->data[$key])?$this->data[$key]:null;
 	}
 
+
+    /**
+     * Method overloading
+     *
+     * @param string $key
+     * @param mixed $value
+	 */
 	public function __set($key, $value)
 	{
 		if (isset($this->data[$key])) {
@@ -72,6 +138,14 @@ Class Media
 		return;
 	}
 
+
+    /**
+     * Initalize the upload with Twitter
+     *
+     * @param Http\Client $httpClient
+     * @params array $params
+     * @return Twitter\Response
+     */
 	protected function initUpload($httpClient, $params)
 	{
 		$payload = [];
@@ -87,6 +161,14 @@ Class Media
         return new Response($response);
 	}
 
+
+    /**
+     * Send the chunks of the file to Twitter
+     *
+     * @param Http\Client $httpClient
+     * @params array $params
+     * @return boolean
+     */
 	protected function appendUpload($httpClient, $params)
 	{
 		$payload = [];
@@ -119,6 +201,13 @@ Class Media
 	}
 
 
+    /**
+     * Send the upload finalize to Twitter
+     *
+     * @param Http\Client $httpClient
+     * @params array $params
+     * @return Twitter\Response
+     */
 	protected function finalizeUpload($httpClient,$params)
 	{
 		$payload = [];
@@ -134,8 +223,17 @@ Class Media
 
 	}
 
+
+    /**
+     * Send send a file size request to the web server hosting the media
+     *
+     * @param string $file
+     * @return integer
+     */
 	protected function getFileSize($file)
 	{
+		$contentLength = 0;
+		
 	    $ch = curl_init($file);
 	    curl_setopt($ch, CURLOPT_NOBODY, true);
 	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
