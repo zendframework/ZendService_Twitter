@@ -946,7 +946,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusesUpdate($status, $inReplyToStatusId = null)
+    public function statusesUpdate($status, $inReplyToStatusId = null, $extraAttributes=[])
     {
         $this->init();
         $path = 'statuses/update';
@@ -964,6 +964,13 @@ class Twitter
         }
 
         $params = ['status' => $status];
+
+        if (isset($extraAttributes['media_ids']) 
+            and is_array($extraAttributes['media_ids']) 
+            and ! empty($extraAttributes['media_ids'])) {
+            $params['media_ids']=implode(',',$extraAttributes['media_ids']);
+        }
+
         $inReplyToStatusId = $this->validInteger($inReplyToStatusId);
         if ($inReplyToStatusId) {
             $params['in_reply_to_status_id'] = $inReplyToStatusId;
