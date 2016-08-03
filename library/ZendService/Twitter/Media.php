@@ -36,7 +36,7 @@ Class Media
      * The number of bytes to send to Twitter at one time.
      * @var Integer
      */
-    protected $chunkSize = (1024*1024);
+    protected $chunkSize = (1024*1024)*4;
 
     /**
      * The base URI for this API call
@@ -155,21 +155,21 @@ Class Media
         $payload = [];
         $payload['command'] = 'APPEND';
         $payload['media_id'] = $params['media_id'];
+
         $fileHandle = fopen($this->data['image_filename'],'rb');
-        /* 
-         * Chunksize is set pretty high so this really should never trigger.
-         * But it's here in case someone reduced chunksize
-         */
-        $appendStatus = true;
-        while ($appendStatus and ! feof($fileHandle)) 
+
+        while (! feof($fileHandle)) 
         {
             $data = fread($fileHandle, $this->chunkSize);
+
             $payload['media_data'] = base64_encode($data);
             $payload['segment_index'] = $this->data['segment_index']++;
+
             $httpClient->resetParameters();
             $httpClient->setHeaders(['Content-type' => 'application/x-www-form-urlencoded']);
             $httpClient->setMethod('POST');
             $httpClient->setParameterPost($payload);
+
             $response = $httpClient->send();
             $appendStatus = $response->isSuccess();
 
@@ -231,27 +231,6 @@ Class Media
             }
 
         }
-
-        return $returnValue;
-    }
-
-
-    /**
-     * Read a chunk of the file into a variable. No matter what value you give 
-     *
-     * @param string $fileName
-     * @return boolean
-     */
-    protected function readChunk($fileHandle) 
-    {
-        $counter     = 0;
-        $returnValue = '';
-        $readChunk   = floor($this->chunkSize,8192);
-
-        while ($counter<$this->chunkSize) {
-            $returnValue .= fread($fileHandle,$readChunk);
-            $counter += $readChunk;
-        } 
 
         return $returnValue;
     }
