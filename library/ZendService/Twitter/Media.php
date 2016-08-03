@@ -30,49 +30,49 @@ Class Media
      *
      * @var Array
      */
-	protected $data = [];
+    protected $data = [];
 
     /**
      * The number of bytes to send to Twitter at one time.
      * @var Integer
      */
-	protected $chunkSize = 1048576;
+    protected $chunkSize = (1024*1024);
 
     /**
      * The base URI for this API call
      *
      * @var String
      */
-	protected $baseUri = 'https://upload.twitter.com';
+    protected $baseUri = 'https://upload.twitter.com';
 
     /**
      * The API endpoint for all calls.
      *
      * @var String
      */
-	protected $endPoint = '/1.1/media/upload.json';
+    protected $endPoint = '/1.1/media/upload.json';
 
 
     /**
      * Constructor
      *
-     * @param  null|string $image_url
+     * @param  null|string $image_filename
      * @param  string $consumer
      */
-	public function __construct($image_url = null, $media_type = '')
-	{
-		$this->data['image_url']='';
-		$this->data['baseUri'] = 'https://upload.twitter.com';
-		$this->data['end_point'] = '/1.1/media/upload.json';
-		$this->data['media_id'] = 0;
-		$this->data['segment_index'] = 0;
-		$this->data['media_type'] = $media_type;
+    public function __construct($image_filename = null, $media_type = '')
+    {
+        $this->data['image_filename'] = '';
+        $this->data['baseUri']        = 'https://upload.twitter.com';
+        $this->data['end_point']      = '/1.1/media/upload.json';
+        $this->data['media_id']       = 0;
+        $this->data['segment_index']  = 0;
+        $this->data['media_type']     = $media_type;
 
+        if (! is_null($image_filename)) {
+            $this->data['image_filename']=$image_filename;
+        }
 
-		if (! is_null($image_url)) {
-			$this->data['image_url']=$image_url;
-		}	
-	}
+    }
 
 
     /**
@@ -82,61 +82,42 @@ Class Media
      * @return Twitter\Response
      * @throws \Exception If the file can't be opened.
      */
-	public function upload(Client $httpClient)
-	{
+    public function upload(Client $httpClient)
+    {
         $params = [];
-        $params['file_handle'] = fopen($this->data['image_url'],'rb');
+        $httpClient->setUri($this->baseUri . $this->endPoint);
+        
+        if (! $this->validateFile($this->data['image_filename'])) {
+            throw new \Exception('Failed to open '.$this->data['image_filename']);
+        }
 
-		if (is_null($params['file_handle'])) {
-			throw new \Exception('Cannot open ' . $this->data['image_url']); 
-		}
+        if (empty($this->data['media_type'])) {
+            throw new \Exception('No Media Type given.');
+        }
 
-		$params['media_type'] = $this->data['media_type'];
-		$params['total_bytes'] = $this->getFileSize($this->data['image_url']);
+        $params['total_bytes'] = filesize($this->data['image_filename']);
+        $params['media_type']  = $this->data['media_type'];
 
-        $httpClient->setUri($this->data['baseUri'] . $this->data['end_point']);
+        $response = $this->initUpload($httpClient,$params);
+        $initResponse = $response->toValue();
 
-		$holding = $this->initUpload($httpClient,$params);
-		$initResponse = $holding->toValue();
-		$this->data['media_id'] = $initResponse->media_id;
+        if (! $response->isSuccess()) {
+            throw new \Exception('Failed to init the upload with Twitter.');
+        }
 
-		$params['media_id'] = $this->data['media_id'];
-		$success = $this->appendUpload($httpClient,$params);
+        $this->data['media_id'] = $initResponse->media_id;
 
+        $params['media_id'] = $this->data['media_id'];
+        $success = $this->appendUpload($httpClient,$params);
 
-		$response = $this->finalizeUpload($httpClient,$params);
-		fClose($params['file_handle']);	
+        if (! $success) {
+            throw new \Exception('Failed the APPEND stage of the upload.');
+        }
 
-		return $response;
-	}
+        $response = $this->finalizeUpload($httpClient,$params);
 
-
-    /**
-     * Method overloading
-     *
-     * @param  string $key
-     * @return mixed
-     */
-	public function __get($key)
-	{
-		return isset($this->data[$key])?$this->data[$key]:null;
-	}
-
-
-    /**
-     * Method overloading
-     *
-     * @param string $key
-     * @param mixed $value
-	 */
-	public function __set($key, $value)
-	{
-		if (isset($this->data[$key])) {
-			$this->data[$key]= $value;
-		}
-
-		return;
-	}
+        return $response;
+    }
 
 
     /**
@@ -146,20 +127,20 @@ Class Media
      * @params array $params
      * @return Twitter\Response
      */
-	protected function initUpload($httpClient, $params)
-	{
-		$payload = [];
-		$payload['command'] = 'INIT';
-		$payload['media_type'] = $params['media_type'];
-		$payload['total_bytes'] = $params['total_bytes'];
+    protected function initUpload($httpClient, $params)
+    {
+        $payload = [];
+        $payload['command'] = 'INIT';
+        $payload['media_type'] = $params['media_type'];
+        $payload['total_bytes'] = $params['total_bytes'];
 
         $httpClient->resetParameters();
         $httpClient->setHeaders(['Content-type' => 'application/x-www-form-urlencoded']);
-		$httpClient->setMethod('POST');
-		$httpClient->setParameterPost($payload);
+        $httpClient->setMethod('POST');
+        $httpClient->setParameterPost($payload);
         $response = $httpClient->send();
         return new Response($response);
-	}
+    }
 
 
     /**
@@ -169,36 +150,43 @@ Class Media
      * @params array $params
      * @return boolean
      */
-	protected function appendUpload($httpClient, $params)
-	{
-		$payload = [];
-		$payload['command'] = 'APPEND';
-		$payload['media_id'] = $params['media_id'];
+    protected function appendUpload($httpClient, $params)
+    {
+        $payload = [];
+        $payload['command'] = 'APPEND';
+        $payload['media_id'] = $params['media_id'];
+        $fileHandle = fopen($this->data['image_filename'],'rb');
+        /* 
+         * Chunksize is set pretty high so this really should never trigger.
+         * But it's here in case someone reduced chunksize
+         */
+        $appendStatus = true;
+        while ($appendStatus and ! feof($fileHandle)) 
+        {
+            $data = fread($fileHandle, $this->chunkSize);
+            $payload['media_data'] = base64_encode($data);
+            $payload['segment_index'] = $this->data['segment_index']++;
+            $httpClient->resetParameters();
+            $httpClient->setHeaders(['Content-type' => 'application/x-www-form-urlencoded']);
+            $httpClient->setMethod('POST');
+            $httpClient->setParameterPost($payload);
+            $response = $httpClient->send();
+            $appendStatus = $response->isSuccess();
 
-		/* 
-		 * Chunksize is set pretty high so this really should never trigger.
-		 * But it's here in case someone reduced chunksize
-		 */
-		$appendStatus = true;
+            if (! $appendStatus) {
+                throw new \Exception('Failed uploading segment ' . 
+                                     ($this->data['segment_index']-1) . ' of ' . 
+                                     $this->data['image_filename'] . 
+                                     ". Error Code: ". $response->getStatusCode() . 
+                                     ". Reason: " . $response->getReasonPhrase());
+            }
 
-		while ($appendStatus and ! feof($params['file_handle'])) 
-		{
-			$payload['media_data'] = base64_encode(fread($params['file_handle'], $this->chunkSize));
-			$payload['segment_index'] = $this->data['segment_index']++;
-	        $httpClient->resetParameters();
-	        $httpClient->setHeaders(['Content-type' => 'application/x-www-form-urlencoded']);
-			$httpClient->setMethod('POST');
-			$httpClient->setParameterPost($payload);
-	        $response = $httpClient->send();
-			$appendStatus = $response->isSuccess();
-			if (! $appendStatus) {
-				throw new \Exception('Failed uploading segment ' . ($this->data['segment_index']-1) . ' of ' . $this->data['image_url']);
-			}
+        }
 
-		}
+        fClose($fileHandle);
 
-		return $appendStatus;
-	}
+        return $appendStatus;
+    }
 
 
     /**
@@ -208,49 +196,92 @@ Class Media
      * @params array $params
      * @return Twitter\Response
      */
-	protected function finalizeUpload($httpClient,$params)
-	{
-		$payload = [];
-		$payload['command'] = 'FINALIZE';
-		$payload['media_id'] = $this->data['media_id'];
+    protected function finalizeUpload($httpClient,$params)
+    {
+        $payload = ['command'  => 'FINALIZE',
+                    'media_id' => $this->data['media_id']];
 
         $httpClient->resetParameters();
         $httpClient->setHeaders(['Content-type' => 'application/x-www-form-urlencoded']);
-		$httpClient->setMethod('POST');
-		$httpClient->setParameterPost($payload);
+        $httpClient->setMethod('POST');
+        $httpClient->setParameterPost($payload);
         $response = $httpClient->send();
-		return new Response($response);
+        
+        return new Response($response);
+    }
+    
+    
+    /**
+     * Validate that the file exists and can be opened.
+     * 
+     * @todo Put a check to make sure the file is local.
+     * @param string $fileName
+     * @return boolean
+     */
+    protected function validateFile($fileName)
+    {
+        $returnValue = false;
+        $returnValue = file_exists($fileName);
 
-	}
+        if ($returnValue) {
+            $returnValue = ($handle = fopen($fileName,'rb'));
+
+            if ($returnValue) {
+                fClose($handle);
+            }
+
+        }
+
+        return $returnValue;
+    }
 
 
     /**
-     * Send send a file size request to the web server hosting the media
+     * Read a chunk of the file into a variable. No matter what value you give 
      *
-     * @param string $file
-     * @return integer
+     * @param string $fileName
+     * @return boolean
      */
-	protected function getFileSize($file)
-	{
-		$contentLength = 0;
-		
-	    $ch = curl_init($file);
-	    curl_setopt($ch, CURLOPT_NOBODY, true);
-	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	    curl_setopt($ch, CURLOPT_HEADER, true);
-	    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    protected function readChunk($fileHandle) 
+    {
+        $counter     = 0;
+        $returnValue = '';
+        $readChunk   = floor($this->chunkSize,8192);
 
-	    $data = curl_exec($ch);
-	    curl_close($ch);
+        while ($counter<$this->chunkSize) {
+            $returnValue .= fread($fileHandle,$readChunk);
+            $counter += $readChunk;
+        } 
 
-	    if (preg_match('/Content-Length: (\d+)/', $data, $matches)) {
+        return $returnValue;
+    }
 
-	        // Contains file size in bytes
-	        $contentLength = (int)$matches[1];
 
-	    }		
+    /**
+     * Method overloading
+     *
+     * @param  string $key
+     * @return mixed
+     */
+    public function __get($key)
+    {
+        return isset($this->data[$key])?$this->data[$key]:null;
+    }
 
-	    return $contentLength;
-	}
+
+    /**
+     * Method overloading
+     *
+     * @param string $key
+     * @param mixed $value
+     */
+    public function __set($key, $value)
+    {
+        if (isset($this->data[$key])) {
+            $this->data[$key]= $value;
+        }
+
+        return;
+    }
 
 }
