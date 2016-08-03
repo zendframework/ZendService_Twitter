@@ -82,9 +82,6 @@ Class Media
      */
     public function upload(Client $httpClient)
     {
-        $params = [];
-        $httpClient->setUri($this->baseUri . $this->endPoint);
-        
         if (! $this->validateFile($this->data['image_filename'])) {
             throw new \Exception('Failed to open '.$this->data['image_filename']);
         }
@@ -93,6 +90,9 @@ Class Media
             throw new \Exception('No Media Type given.');
         }
 
+        $params = [];
+        $httpClient->setUri($this->baseUri . $this->endPoint);
+        
         $params['total_bytes'] = filesize($this->data['image_filename']);
         $params['media_type']  = $this->data['media_type'];
 
@@ -105,7 +105,6 @@ Class Media
 
         $this->data['media_id'] = $initResponse->media_id;
 
-        $params['media_id'] = $this->data['media_id'];
         $success = $this->appendUpload($httpClient,$params);
 
         if (! $success) {
@@ -127,10 +126,9 @@ Class Media
      */
     protected function initUpload($httpClient, $params)
     {
-        $payload = [];
-        $payload['command'] = 'INIT';
-        $payload['media_type'] = $params['media_type'];
-        $payload['total_bytes'] = $params['total_bytes'];
+        $payload = ['command'     => 'INIT',
+                    'media_type'  => $params['media_type'],
+                    'total_bytes' => $params['total_bytes']];
 
         $httpClient->resetParameters();
         $httpClient->setHeaders(['Content-type' => 'application/x-www-form-urlencoded']);
@@ -150,12 +148,15 @@ Class Media
      */
     protected function appendUpload($httpClient, $params)
     {
-        $payload = [];
-        $payload['command'] = 'APPEND';
-        $payload['media_id'] = $params['media_id'];
+        $payload = ['command'   => 'APPEND',
+                    'media_id'] => $this->data['media_id']];
 
         $fileHandle = fopen($this->data['image_filename'],'rb');
 
+        if (! $fileHandle)) {
+            throw new \Exception('Failed to open the file in the APPEND method.');
+        }
+        
         while (! feof($fileHandle)) 
         {
             $data = fread($fileHandle, $this->chunkSize);
