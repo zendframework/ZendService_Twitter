@@ -62,8 +62,6 @@ Class Media
     public function __construct($image_filename = null, $media_type = '')
     {
         $this->data['image_filename'] = '';
-        $this->data['baseUri']        = 'https://upload.twitter.com';
-        $this->data['end_point']      = '/1.1/media/upload.json';
         $this->data['media_id']       = 0;
         $this->data['segment_index']  = 0;
         $this->data['media_type']     = $media_type;
