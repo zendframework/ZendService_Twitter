@@ -149,14 +149,14 @@ Class Media
     protected function appendUpload($httpClient, $params)
     {
         $payload = ['command'   => 'APPEND',
-                    'media_id'] => $this->data['media_id']];
+                    'media_id' => $this->data['media_id']];
 
         $fileHandle = fopen($this->data['image_filename'],'rb');
 
-        if (! $fileHandle)) {
+        if (! $fileHandle) {
             throw new \Exception('Failed to open the file in the APPEND method.');
         }
-        
+
         while (! feof($fileHandle)) 
         {
             $data = fread($fileHandle, $this->chunkSize);
