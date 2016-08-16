@@ -18,39 +18,63 @@ use Zend\Http\Headers as Headers;
  */
 class RateLimit
 {
+    /**
+     * @var int
+     */
     private $limit;
+
+    /**
+     * @var int
+     */
     private $remaining;
+
+    /**
+     * @var int
+     */
     private $reset;
-	
+
     /**
      * Constructor
      *
      * @param  null|Headers $headers
      */
-	public function __construct(Headers $headers = null)
-	{
-
-        if (! is_null($headers)) {
-	        $headersArray = $headers->toArray();
-	        $this->limit = isset($headersArray['x-rate-limit-limit']) ? $headersArray['x-rate-limit-limit'] : 0;
-	        $this->remaining = isset($headersArray['x-rate-limit-remaining']) ? $headersArray['x-rate-limit-remaining'] : 0;
-	        $this->reset = isset($headersArray['x-rate-limit-reset']) ? $headersArray['x-rate-limit-reset'] : 0;
+    public function __construct(Headers $headers = null)
+    {
+        if (! $headers) {
+            return;
         }
 
-	}
+        $this->limit = $headers->has('x-rate-limit-limit')
+            ? $headers->get('x-rate-limit-limit')->getFieldValue()
+            : 0;
+        $this->remaining = $headers->has('x-rate-limit-remaining')
+            ? $headers->get('x-rate-limit-remaining')->getFieldValue()
+            : 0;
+        $this->reset = $headers->has('x-rate-limit-reset')
+            ? $headers->get('x-rate-limit-reset')->getFieldValue()
+            : 0;
+    }
 
 
     /**
      * Retun the requested property
      *
-     * @return null|integer
+     * @param string $key
+     * @return null|int
      */
-	public function __get($key)
-	{
-		if (isset($this->$key)) {
-			return $this->$key;
-		}
+    public function __get($key)
+    {
+        return isset($this->$key) ? $this->$key : null;
+    }
 
-		return null;
-	}
+    /**
+     * Is the requested property available?
+     *
+     * @param string $key
+     * @return bool
+     */
+    public function __isset($key)
+    {
+        return property_exists($this, $key);
+    }
 }

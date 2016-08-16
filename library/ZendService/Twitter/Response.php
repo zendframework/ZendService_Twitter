@@ -28,6 +28,14 @@ use Zend\Json\Json;
 class Response
 {
     /**
+     * Empty body content that should not result in response population.
+     */
+    private $emptyBodyContent = [
+        null,
+        '',
+    ];
+
+    /**
      * @var HttpResponse
      */
     protected $httpResponse;
@@ -47,21 +55,22 @@ class Response
      */
     protected $rateLimit;
 
-
     /**
      * Constructor
      *
      * Assigns the HttpResponse to a property, as well as the body
      * representation. It then attempts to decode the body as JSON.
      *
-     * @param  HttpResponse $httpResponse
+     * @param  null|HttpResponse $httpResponse
      * @throws Exception\DomainException if unable to decode JSON response
      */
     public function __construct(HttpResponse $httpResponse = null)
     {
         $this->httpResponse = $httpResponse;
 
-        if (! is_null($httpResponse) and ! empty($httpResponse->getBody())) {
+        if ($httpResponse
+            && ! in_array($httpResponse->getBody(), $this->emptyBodyContent, true)
+        ) {
             $this->populate($httpResponse);
         }
     }
@@ -167,17 +176,13 @@ class Response
      * Populates the object with info. This can possibly called from the
      * constructor, or it can be called later.
      *
+     * @param  null|HttpResponse $httpResponse
+     * @return void
      */
-    public function populate($httpResponse = null)
+    private function populate(HttpResponse $httpResponse = null)
     {
-
-        if (is_null($httpResponse)) {
-            $httpResponse = $this->httpResponse;
-        }
-
         $this->httpResponse = $httpResponse;
-        $this->rawBody      = $httpResponse->getBody();
-
+        $this->rawBody = $httpResponse->getBody();
         $this->rateLimit = new RateLimit($this->httpResponse->getHeaders());
 
         try {
@@ -189,7 +194,5 @@ class Response
                 $e->getMessage()
             ), 0, $e);
         }
-
-        return;
     }
 }
