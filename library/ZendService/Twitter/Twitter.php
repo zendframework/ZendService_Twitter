@@ -17,9 +17,7 @@ use Zend\Stdlib\ArrayUtils;
 use Zend\Uri;
 
 /**
- * @category   Zend
- * @package    Zend_Service
- * @subpackage Twitter
+ * @todo Mark all properties as private when preparing a new major version.
  */
 class Twitter
 {
@@ -56,23 +54,23 @@ class Twitter
     protected $dateFormat = 'D, d M Y H:i:s T';
 
     /**
-     * @var Http\Client
+     * @var Http\Client|null
      */
-    protected $httpClient = null;
+    protected $httpClient;
 
     /**
      * Current method type (for method proxying)
      *
-     * @var string
+     * @var string|null
      */
     protected $methodType;
 
     /**
      * Oauth Consumer
      *
-     * @var OAuth\Consumer
+     * @var OAuth\Consumer|null
      */
-    protected $oauthConsumer = null;
+    protected $oauthConsumer;
 
     /**
      * Types of API methods
@@ -109,21 +107,21 @@ class Twitter
     protected $username;
 
     /**
-     * Constructor
-     *
      * @param  null|array|Traversable $options
      * @param  null|OAuth\Consumer $consumer
      * @param  null|Http\Client $httpClient
      */
-    public function __construct($options = null, OAuth\Consumer $consumer = null, Http\Client $httpClient = null)
-    {
+    public function __construct(
+        $options = null,
+        OAuth\Consumer $consumer = null,
+        Http\Client $httpClient = null
+    ) {
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
         }
         if (! is_array($options)) {
             $options = [];
         }
-
         $this->options = $options;
 
         if (isset($options['username'])) {
@@ -177,6 +175,7 @@ class Twitter
         } elseif (isset($options['http_client']) && null === $httpClient) {
             $httpClient = $options['http_client'];
         }
+
         if ($httpClient instanceof Http\Client) {
             $this->httpClient = $httpClient;
         } else {
@@ -1338,7 +1337,8 @@ class Twitter
     }
 
     /**
-     * Returns a list of IDs of the current logged in user's friends or the friends of the screen name passed in as
+     * Returns a list of IDs of the current logged in user's friends or the
+     * friends of the screen name passed in as
      * part of the parameters array.
      *
      * Returns the next cursor if there are more to be returned.
@@ -1351,6 +1351,26 @@ class Twitter
     {
         $this->init();
         $path = 'friends/ids';
+        $params = $this->createUserParameter($id, $params);
+        $response = $this->get($path, $params);
+        return new Response($response);
+    }
+
+
+    /**
+     * Returns the subscribers of the specified list. Private list subscribers
+     * will only be shown if the authenticated user owns the specified list.
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param  int|string $id
+     * @param  array $params
+     * @return Response
+     */
+    protected function listsSubscribers($id, array $params = [])
+    {
+        $this->init();
+        $path = 'lists/subscribers';
         $params = $this->createUserParameter($id, $params);
         $response = $this->get($path, $params);
         return new Response($response);
