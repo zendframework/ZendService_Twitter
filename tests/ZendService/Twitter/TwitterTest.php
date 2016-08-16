@@ -13,6 +13,8 @@ namespace ZendTest\Twitter;
 use Zend\Http;
 use ZendService\Twitter;
 use ZendService\Twitter\Response as TwitterResponse;
+use ZendService\Twitter\RateLimit as RateLimit;
+
 use Zend\Http\Client\Adapter\Curl as CurlAdapter;
 
 /**
@@ -51,19 +53,77 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($client));
         $client->expects($this->once())->method('setUri')
             ->with('https://api.twitter.com/1.1/' . $path);
+
+
         $response = $this->getMockBuilder('Zend\Http\Response', [], [], '', false)->getMock();
         if (! is_null($params)) {
             $setter = 'setParameter' . ucfirst(strtolower($method));
             $client->expects($this->once())->method($setter)->with($params);
         }
+
         $client->expects($this->once())->method('send')->with()
             ->will($this->returnValue($response));
+
         $response->expects($this->any())->method('getBody')
             ->will($this->returnValue(
                 isset($responseFile) ? file_get_contents(__DIR__ . '/_files/' . $responseFile) : '{}'
             ));
+
+
         return $client;
     }
+
+    public function testRateLimitHeaders()
+    {
+
+        $rateLimits = ['x-rate-limit-limit'     => rand(1, 100),
+                       'x-rate-limit-remaining' => rand(1, 100),
+                       'x-rate-limit-reset'     => rand(1, 100)];
+
+        $headers = $this->getMockBuilder('Zend\Http\Headers', [], [], '', false)                         
+                         ->getMock();
+
+        $headers->expects($this->any())
+                ->method('toArray')
+                ->will($this->returnValue($rateLimits));
+                
+        $response = $this->getMockBuilder('Zend\Http\Response', [], [], '', false)                         
+                         ->getMock();
+
+        $response->expects($this->any())
+                ->method('getHeaders')
+                ->will($this->returnValue($headers));                       
+
+
+        $twitterResponse = $this->getMockBuilder('ZendService\Twitter\Response')
+                                ->enableOriginalConstructor()
+                                ->setConstructorArgs([$response])
+                                ->getMock();
+        
+        $twitterResponse->expects($this->any())
+                        ->method('getRateLimit')
+                        ->will($this->returnValue(new \ZendService\Twitter\RateLimit($headers)));
+
+        $twitter = new Twitter\Twitter(null, null, null, $twitterResponse);
+        $twitter->setHttpClient($this->stubTwitter(
+            'users/show.json',
+            Http\Request::METHOD_GET,
+            'users.show.mwop.json',
+            ['screen_name' => 'mwop']
+        ));
+
+        $finalResponse = $twitter->users->show('mwop');
+        
+        $this->assertInstanceOf('ZendService\Twitter\Response', $finalResponse);
+        
+        $rateLimit = $finalResponse->getRateLimit();
+        $this->assertInstanceOf('ZendService\Twitter\RateLimit', $rateLimit);
+        $this->assertTrue($rateLimit->limit === $rateLimits['x-rate-limit-limit']);
+        $this->assertTrue($rateLimit->remaining === $rateLimits['x-rate-limit-remaining']);
+        $this->assertTrue($rateLimit->reset === $rateLimits['x-rate-limit-reset']);
+        return;
+    }
+
 
     /**
      * OAuth tests
@@ -646,6 +706,37 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         ));
         $response = $twitter->users->search('Zend');
         $this->assertTrue($response instanceof TwitterResponse);
+    }
+
+    public function testListsSubscribers()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubTwitter(
+            'lists/subscribers.json',
+            Http\Request::METHOD_GET,
+            'lists.subscribers.json'
+        ));
+        $response = $twitter->lists->subscribers('devzone');
+        $this->assertTrue($response instanceof TwitterResponse);
+        $payload = $response->toValue();
+        $this->assertCount(1, $payload->users);
+        $this->assertEquals(4795561, $payload->users[0]->id);
+    }
+
+    public function testFriendsIds()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubTwitter(
+            'users/search.json',
+            Http\Request::METHOD_GET,
+            'users.search.json',
+            ['q' => 'Zend']
+        ));
+        $response = $twitter->users->search('Zend');
+        $this->assertTrue($response instanceof TwitterResponse);
+        $payload = $response->toValue();
+        $this->assertCount(20, $payload);
+        $this->assertEquals(15012215, $payload[0]->id);
     }
 
     public function providerAdapterAlwaysReachableIfSpecifiedConfiguration()
