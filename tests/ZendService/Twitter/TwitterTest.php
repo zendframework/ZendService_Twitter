@@ -739,6 +739,19 @@ class TwitterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(15012215, $payload[0]->id);
     }
 
+    public function testBadResponseErrorHandling()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubTwitter(
+            'statuses/update.json',
+            Http\Request::METHOD_POST,
+            'bad.response.json',
+            ['status' => 'Test Message 1']
+        ));
+        $response = $twitter->statuses->update('Test Message 1');
+        $this->assertEquals($response->getErrors(), "Read-only application cannot POST.");
+    }
+
     public function providerAdapterAlwaysReachableIfSpecifiedConfiguration()
     {
         $adapter = new CurlAdapter();

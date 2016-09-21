@@ -1,0 +1,4 @@
+{
+  "request": "\/1.1\/media\/upload.json",
+  "error": "Read-only application cannot POST."
+}
