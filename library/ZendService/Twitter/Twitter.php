@@ -928,7 +928,7 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusesShow($id, $options)
+    public function statusesShow($id, array $options = [])
     {
         $this->init();
         $path = 'statuses/show/' . $this->validInteger($id);
