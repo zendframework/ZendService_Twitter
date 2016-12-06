@@ -954,6 +954,9 @@ class Twitter
                     }
                     $params['include_my_retweet'] = $value;
                     break;
+                case 'tweet_mode':
+                    $params['tweet_mode'] = 'extended';
+                    break;
                 default:
                     break;
             }
