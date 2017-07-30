@@ -124,13 +124,13 @@ class Response
             return [];
         }
         if (null === $this->jsonBody
-            || ! isset($this->jsonBody->errors)
+            || ! isset($this->jsonBody->error)
         ) {
             throw new Exception\DomainException(
                 'Either no JSON response received, or JSON error response is malformed; cannot return errors'
             );
         }
-        return $this->jsonBody->errors;
+        return $this->jsonBody->error;
     }
 
     /**
