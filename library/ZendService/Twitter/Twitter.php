@@ -510,11 +510,7 @@ class Twitter
             throw new Exception\InvalidArgumentException(
                 'Direct message must contain at least one character'
             );
-        } elseif (140 < $len) {
-            throw new Exception\OutOfRangeException(
-                'Direct message must contain no more than 140 characters'
-            );
-        }
+        } 
 
         $params         = $this->createUserParameter($user, []);
         $params['text'] = $text;
