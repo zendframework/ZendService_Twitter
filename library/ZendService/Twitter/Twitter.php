@@ -247,7 +247,7 @@ class Twitter
             );
         }
 
-        return call_user_func_array([$this, $test], $params);
+        return $this->$test(...$params);
     }
 
     /**
@@ -472,6 +472,9 @@ class Twitter
     /**
      * Send a direct message to a user
      *
+     * Proxies to `directMessagesEventsNew()`, as the `direct_messages/new`
+     * path is deprecated.
+     *
      * @param  int|string $user User to whom to send message
      * @param  string $text Message to send to user
      * @throws Exception\InvalidArgumentException if message is empty
@@ -480,10 +483,27 @@ class Twitter
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function directMessagesNew($user, $text)
+    public function directMessagesNew($user, $text, array $extraParams = [])
+    {
+        return $this->directMessagesEventsNew($user, $text, $extraParams);
+    }
+
+    /**
+     * Send a direct message to a user.
+     *
+     * If `$extraParams` contains a `media_id` parameter, that value will be
+     * used to provide a media attachment for the message.
+     *
+     * @param  int|string $user User to whom to send message
+     * @throws Exception\InvalidArgumentException if message is empty
+     * @throws Exception\OutOfRangeException if message is too long
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     */
+    public function directMessagesEventsNew($user, string $text, array $extraParams = []) : Response
     {
         $this->init();
-        $path = 'direct_messages/new';
+        $path = 'direct_messages/events/new';
 
         $len = iconv_strlen($text, 'UTF-8');
         if (0 === $len) {
@@ -498,10 +518,38 @@ class Twitter
             );
         }
 
-        $params         = $this->createUserParameter($user, []);
-        $params['text'] = $text;
-        $response       = $this->post($path, $params);
-        return new Response($response);
+        if (! $this->validInteger($user)) {
+            $response = $this->usersShow($user);
+            if (! $response->isSuccess()) {
+                throw new Exception\InvalidArgumentException(
+                    'Invalid user provided; must be a Twitter user ID or screen name'
+                );
+            }
+            $user = $response->id_str;
+        }
+
+        $params = [
+            'type' => 'message_create',
+            'message_create' => [
+                'target' => [
+                    'recipient_id' => $user,
+                ],
+                'message_data' => [
+                    'text' => $text,
+                ],
+            ],
+        ];
+
+        if (isset($extraParams['media_id'])) {
+            $params['message_create']['message_data']['attachment'] = [
+                'type' => 'media',
+                'media' => [
+                    'id' => $extraParams['media_id'],
+                ],
+            ];
+        }
+
+        return new Response($this->post($path, $params));
     }
 
     /**
