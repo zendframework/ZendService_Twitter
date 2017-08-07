@@ -1,11 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2014 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
- * @package   Zend_Service
+ * @see       https://github.com/zendframework/ZendService_Twitter for the canonical source repository
+ * @copyright Copyright (c) 2017 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   https://github.com/zendframework/ZendService_Twitter/blob/master/LICENSE.md New BSD License
  */
 
 namespace ZendService\Twitter;
@@ -14,7 +11,6 @@ use Zend\Http\Headers as Headers;
 
 /**
  * Representation of the Rate Limit Headers from Twitter.
- *
  */
 class RateLimit
 {
@@ -45,13 +41,13 @@ class RateLimit
         }
 
         $this->limit = $headers->has('x-rate-limit-limit')
-            ? $headers->get('x-rate-limit-limit')->getFieldValue()
+            ? (int) $headers->get('x-rate-limit-limit')->getFieldValue()
             : 0;
         $this->remaining = $headers->has('x-rate-limit-remaining')
-            ? $headers->get('x-rate-limit-remaining')->getFieldValue()
+            ? (int) $headers->get('x-rate-limit-remaining')->getFieldValue()
             : 0;
         $this->reset = $headers->has('x-rate-limit-reset')
-            ? $headers->get('x-rate-limit-reset')->getFieldValue()
+            ? (int) $headers->get('x-rate-limit-reset')->getFieldValue()
             : 0;
     }
 
@@ -62,7 +58,7 @@ class RateLimit
      * @param string $key
      * @return null|int
      */
-    public function __get($key)
+    public function __get($key) : ?int
     {
         return isset($this->$key) ? $this->$key : null;
     }
@@ -73,7 +69,7 @@ class RateLimit
      * @param string $key
      * @return bool
      */
-    public function __isset($key)
+    public function __isset($key) : bool
     {
         return property_exists($this, $key);
     }

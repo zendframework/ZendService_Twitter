@@ -1,168 +1,147 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2014 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
- * @package   Zend_Service
+ * @see       https://github.com/zendframework/ZendService_Twitter for the canonical source repository
+ * @copyright Copyright (c) 2017 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   https://github.com/zendframework/ZendService_Twitter/blob/master/LICENSE.md New BSD License
  */
 
 namespace ZendService\Twitter;
 
 use Zend\Http\Client as Client;
-use ZendService\Twitter\Response as Response;
-
 
 /**
  * Twitter Media Uploader base class
  *
- * @category   Zend
- * @package    Zend_Service
- * @subpackage Twitter
  * @author Cal Evans <cal@calevans.com>
  */
-Class Media
+class Media
 {
+    const UPLOAD_BASE_URI = 'https://upload.twitter.com/1.1/media/upload.json';
 
     /**
-     * Array of basic data to be stored by this class.
-     *
-     * @var Array
+     * @var int The maximum number of bytes to send to Twitter per request.
      */
-    protected $data = [];
+    protected $chunkSize = (1024 * 1024) * 4;
 
     /**
-     * The number of bytes to send to Twitter at one time.
-     * @var Integer
+     * @var string Error message from f*() operations.
      */
-    protected $chunkSize = (1024*1024)*4;
+    private $fileOperationError;
 
     /**
-     * The base URI for this API call
-     *
-     * @var String
+     * @var string Filename of image to upload.
      */
-    protected $baseUri = 'https://upload.twitter.com';
+    private $imageFilename = '';
 
     /**
-     * The API endpoint for all calls.
-     *
-     * @var String
+     * @var string|int Media identifier provided by Twitter following upload.
      */
-    protected $endPoint = '/1.1/media/upload.json';
-
+    private $mediaId = 0;
 
     /**
-     * Constructor
-     *
-     * @param  null|string $image_filename
-     * @param  string $consumer
+     * @var string Mediatype of image.
      */
-    public function __construct($image_filename = null, $media_type = '')
+    private $mediaType = '';
+
+    /**
+     * @var int Next chunked upload offset.
+     */
+    private $segmentIndex = 0;
+
+    public function __construct(string $imageFilename, string $mediaType)
     {
-        $this->data['image_filename'] = '';
-        $this->data['media_id']       = 0;
-        $this->data['segment_index']  = 0;
-        $this->data['media_type']     = $media_type;
-
-        if (! is_null($image_filename)) {
-            $this->data['image_filename']=$image_filename;
-        }
-
+        $this->imageFilename = $imageFilename;
+        $this->mediaType = $mediaType;
     }
-
 
     /**
      * Main call into the upload workflow
      *
-     * @param  Client $httpClient
-     * @return Twitter\Response
-     * @throws \Exception If the file can't be opened.
+     * @throws Exception\InvalidMediaException If the file can't be opened.
+     * @throws Exception\InvalidMediaException If no media type is present.
      */
-    public function upload(Client $httpClient)
+    public function upload(Client $httpClient) : Response
     {
-        if (! $this->validateFile($this->data['image_filename'])) {
-            throw new \Exception('Failed to open '.$this->data['image_filename']);
+        $this->mediaId = 0;
+        $this->segmentIndex = 0;
+
+        if (! $this->validateFile($this->imageFilename)) {
+            throw new Exception\InvalidMediaException('Failed to open ' . $this->imageFilename);
         }
 
-        if (empty($this->data['media_type'])) {
-            throw new \Exception('No Media Type given.');
+        if (! $this->validateMediaType($this->mediaType)) {
+            throw new Exception\InvalidMediaException('Invalid Media Type given.');
         }
 
-        $params = [];
-        $httpClient->setUri($this->baseUri . $this->endPoint);
-        
-        $params['total_bytes'] = filesize($this->data['image_filename']);
-        $params['media_type']  = $this->data['media_type'];
+        $httpClient->setUri(self::UPLOAD_BASE_URI);
 
-        $response = $this->initUpload($httpClient,$params);
-        $initResponse = $response->toValue();
+        $totalBytes = filesize($this->imageFilename);
+        $response = $this->initUpload($httpClient, $this->mediaType, $totalBytes);
 
-        if (! $response->isSuccess()) {
-            throw new \Exception('Failed to init the upload with Twitter.');
-        }
+        $this->mediaId = $response->toValue()->media_id;
 
-        $this->data['media_id'] = $initResponse->media_id;
+        $this->appendUpload($httpClient);
 
-        $success = $this->appendUpload($httpClient,$params);
-
-        if (! $success) {
-            throw new \Exception('Failed the APPEND stage of the upload.');
-        }
-
-        $response = $this->finalizeUpload($httpClient,$params);
-
-        return $response;
+        return $this->finalizeUpload($httpClient);
     }
 
-
     /**
-     * Initalize the upload with Twitter
+     * Initalize the upload with Twitter.
      *
-     * @param Http\Client $httpClient
-     * @params array $params
-     * @return Twitter\Response
+     * @throws Exception\MediaUploadException If upload initialization fails.
      */
-    protected function initUpload($httpClient, $params)
+    private function initUpload(Client $httpClient, string $mediaType, int $totalBytes) : Response
     {
-        $payload = ['command'     => 'INIT',
-                    'media_type'  => $params['media_type'],
-                    'total_bytes' => $params['total_bytes']];
+        $payload = [
+            'command'     => 'INIT',
+            'media_type'  => $mediaType,
+            'total_bytes' => $totalBytes,
+        ];
 
         $httpClient->resetParameters();
         $httpClient->setHeaders(['Content-type' => 'application/x-www-form-urlencoded']);
         $httpClient->setMethod('POST');
         $httpClient->setParameterPost($payload);
         $response = $httpClient->send();
+
+        if (! $response->isSuccess()) {
+            throw new Exception\MediaUploadException(sprintf(
+                'Failed to initialize Twitter media upload: %s',
+                $response->getBody()
+            ));
+        }
+
         return new Response($response);
     }
 
-
     /**
-     * Send the chunks of the file to Twitter
+     * Send chunks of the file to Twitter.
      *
-     * @param Http\Client $httpClient
-     * @params array $params
-     * @return boolean
+     * @throws Exception\MediaUploadException If any upload chunk operation fails.
      */
-    protected function appendUpload($httpClient, $params)
+    private function appendUpload(Client $httpClient) : void
     {
-        $payload = ['command'   => 'APPEND',
-                    'media_id' => $this->data['media_id']];
+        $payload = [
+            'command'  => 'APPEND',
+            'media_id' => $this->mediaId,
+        ];
 
-        $fileHandle = fopen($this->data['image_filename'],'rb');
+        set_error_handler($this->createErrorHandler(), E_WARNING);
+        $fileHandle = fopen($this->imageFilename, 'rb');
+        restore_error_handler();
 
         if (! $fileHandle) {
-            throw new \Exception('Failed to open the file in the APPEND method.');
+            throw new Exception\MediaUploadException(sprintf(
+                'Failed to open the file in the APPEND method: %s',
+                $this->fileOperationError
+            ));
         }
 
-        while (! feof($fileHandle)) 
-        {
+        while (! feof($fileHandle)) {
             $data = fread($fileHandle, $this->chunkSize);
 
             $payload['media_data'] = base64_encode($data);
-            $payload['segment_index'] = $this->data['segment_index']++;
+            $payload['segment_index'] = $this->segmentIndex++;
 
             $httpClient->resetParameters();
             $httpClient->setHeaders(['Content-type' => 'application/x-www-form-urlencoded']);
@@ -170,96 +149,75 @@ Class Media
             $httpClient->setParameterPost($payload);
 
             $response = $httpClient->send();
-            $appendStatus = $response->isSuccess();
 
-            if (! $appendStatus) {
-                throw new \Exception('Failed uploading segment ' . 
-                                     ($this->data['segment_index']-1) . ' of ' . 
-                                     $this->data['image_filename'] . 
-                                     ". Error Code: ". $response->getStatusCode() . 
-                                     ". Reason: " . $response->getReasonPhrase());
+            if (! $response->isSuccess()) {
+                throw new Exception\MediaUploadException(
+                    'Failed uploading segment '
+                    . ($this->segmentIndex - 1)
+                    . ' of '
+                    . $this->imageFilename
+                    . '. Error Code: ' . $response->getStatusCode()
+                    . '. Reason: ' . $response->getReasonPhrase()
+                );
             }
-
         }
 
-        fClose($fileHandle);
-
-        return $appendStatus;
+        fclose($fileHandle);
     }
 
-
     /**
-     * Send the upload finalize to Twitter
-     *
-     * @param Http\Client $httpClient
-     * @params array $params
-     * @return Twitter\Response
+     * Tell Twitter to finalize the upload.
      */
-    protected function finalizeUpload($httpClient,$params)
+    private function finalizeUpload(Client $httpClient) : Response
     {
-        $payload = ['command'  => 'FINALIZE',
-                    'media_id' => $this->data['media_id']];
+        $payload = [
+            'command'  => 'FINALIZE',
+            'media_id' => $this->mediaId,
+        ];
 
         $httpClient->resetParameters();
         $httpClient->setHeaders(['Content-type' => 'application/x-www-form-urlencoded']);
         $httpClient->setMethod('POST');
         $httpClient->setParameterPost($payload);
-        $response = $httpClient->send();
-        
-        return new Response($response);
+        return new Response($httpClient->send());
     }
-    
-    
+
     /**
      * Validate that the file exists and can be opened.
-     * 
+     *
      * @todo Put a check to make sure the file is local.
-     * @param string $fileName
-     * @return boolean
      */
-    protected function validateFile($fileName)
+    private function validateFile(string $fileName) : bool
     {
         $returnValue = false;
-        $returnValue = file_exists($fileName);
 
-        if ($returnValue) {
-            $returnValue = ($handle = fopen($fileName,'rb'));
+        set_error_handler($this->createErrorHandler(), E_WARNING);
+        $returnValue = is_readable($fileName);
+        restore_error_handler();
 
-            if ($returnValue) {
-                fClose($handle);
-            }
-
-        }
-
-        return $returnValue;
+        return (bool) $returnValue;
     }
-
 
     /**
-     * Method overloading
-     *
-     * @param  string $key
-     * @return mixed
+     * Validate the mediatype.
      */
-    public function __get($key)
+    private function validateMediaType(string $mediaType) : bool
     {
-        return isset($this->data[$key])?$this->data[$key]:null;
+        return 1 === preg_match('#^\w+/[-.\w]+(?:\+[-.\w]+)?#', $mediaType);
     }
-
 
     /**
-     * Method overloading
+     * Creates and returns an error handler.
      *
-     * @param string $key
-     * @param mixed $value
+     * The error handler will store the error message string in the
+     * $fileOperationError property.
      */
-    public function __set($key, $value)
+    private function createErrorHandler() : callable
     {
-        if (isset($this->data[$key])) {
-            $this->data[$key]= $value;
-        }
-
-        return;
+        $this->fileOperationError = null;
+        return function ($errno, $errstr) {
+            $this->fileOperationError = $errstr;
+            return true;
+        };
     }
-
 }

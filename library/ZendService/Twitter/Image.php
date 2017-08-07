@@ -1,32 +1,24 @@
 <?php
-
-namespace ZendService\Twitter;
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2014 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
- * @package   Zend_Service
+ * @see       https://github.com/zendframework/ZendService_Twitter for the canonical source repository
+ * @copyright Copyright (c) 2017 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   https://github.com/zendframework/ZendService_Twitter/blob/master/LICENSE.md New BSD License
  */
 
-use Zend\Http\Client as Client;
-use ZendService\Twitter\Response as Response;
+namespace ZendService\Twitter;
 
 /**
  * Twitter Image Uploader
  *
- * @category   Zend
- * @package    Zend_Service
- * @subpackage Twitter
  * @author Cal Evans <cal@calevans.com>
  */
 class Image extends Media
 {
-
-	public function __construct($image_url = null, $media_type = 'image/jpeg')
-	{
-		parent::__construct($image_url, $media_type);
-	}
-
+    /**
+     * @param $imageUrl
+     */
+    public function __construct(string $imageUrl, string $mediaType = 'image/jpeg')
+    {
+        parent::__construct($imageUrl, $mediaType);
+    }
 }

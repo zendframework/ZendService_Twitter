@@ -5,17 +5,10 @@
  * @license   https://github.com/zendframework/ZendService_Twitter/blob/master/LICENSE.md New BSD License
  */
 
-namespace ZendService\Twitter;
+namespace ZendService\Twitter\Exception;
 
-/**
- * Twitter Video Uploader
- *
- * @author Cal Evans <cal@calevans.com>
- */
-class Video extends Media
+use RuntimeException;
+
+class InvalidMediaException extends RuntimeException implements ExceptionInterface
 {
-    public function __construct(string $imageUrl, string $mediaType = 'video/mp4')
-    {
-        parent::__construct($imageUrl, $mediaType);
-    }
 }
