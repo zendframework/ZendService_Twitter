@@ -87,6 +87,16 @@ class TwitterTest extends TestCase
         return $client->reveal();
     }
 
+    public function stubHttpClientInitialization()
+    {
+        $client = $this->prophesize(OAuthClient::class);
+        $client->setHeaders(['Accept-Charset' => 'ISO-8859-1,utf-8'])->will([$client, 'reveal']);
+        $client->resetParameters()->will([$client, 'reveal']);
+        $client->clearCookies()->will([$client, 'reveal']);
+        $client->getCookies()->willReturn([]);
+        return $client->reveal();
+    }
+
     public function testRateLimitHeaders()
     {
         $rateLimits = [
@@ -793,5 +803,24 @@ class TwitterTest extends TestCase
     {
         $twitter = new Twitter\Twitter($config);
         $this->assertSame($adapter, $twitter->getHttpClient()->getAdapter());
+    }
+
+    public function testDirectMessagesNewRaisesExceptionForEmptyMessage()
+    {
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient($this->stubHttpClientInitialization());
+        $this->expectException(Twitter\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage('at least one char');
+        $twitter->directMessagesNew('twitter', '');
+    }
+
+    public function testDirectMessagesNewRaisesExceptionForTooLongOfMessage()
+    {
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient($this->stubHttpClientInitialization());
+        $text = str_pad('', 10001, 'X');
+        $this->expectException(Twitter\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage('no more than 10000 char');
+        $twitter->directMessagesNew('twitter', $text);
     }
 }
