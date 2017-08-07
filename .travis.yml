@@ -37,7 +37,6 @@ matrix:
 
 before_install:
  - cp tests/TestConfiguration.php.travis tests/TestConfiguration.php
- - if [[ $TRAVIS_PHP_VERSION =~ ^7.1 ]];then phpenv config-rm xdebug.ini ; fi
  - travis_retry composer self-update
 
 install:
