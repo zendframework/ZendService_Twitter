@@ -107,6 +107,13 @@ class Twitter
     protected $username;
 
     /**
+     * Flags to use with json_encode for POST requests
+     *
+     * @var int
+     */
+    private $jsonFlags = JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+
+    /**
      * @param  null|array|Traversable $options
      * @param  null|OAuth\Consumer $consumer
      * @param  null|Http\Client $httpClient
@@ -1233,7 +1240,7 @@ class Twitter
      *
      * Performs a POST or PUT request. Any data provided is set in the HTTP
      * client. String data is pushed in as raw POST data; array or object data
-     * is pushed in as POST parameters.
+     * is JSON-encoded before being passed to the request body.
      *
      * @param mixed $method
      * @param mixed $data
@@ -1241,11 +1248,17 @@ class Twitter
      */
     protected function performPost($method, $data, Http\Client $client)
     {
-        if (is_string($data)) {
-            $client->setRawData($data);
-        } elseif (is_array($data) || is_object($data)) {
-            $client->setParameterPost((array) $data);
+        if (is_array($data) || is_object($data)) {
+            $data = json_encode($data, $this->jsonFlags);
         }
+
+        if (! empty($data)) {
+            $client->setRawBody($data);
+            $client->getRequest()
+                ->getHeaders()
+                ->addHeaderLine('Content-Type', 'application/json');
+        }
+
         $client->setMethod($method);
         return $client->send();
     }

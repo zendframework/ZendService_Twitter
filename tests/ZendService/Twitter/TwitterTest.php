@@ -12,6 +12,7 @@ namespace ZendTest\Twitter;
 
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
+use ReflectionProperty;
 use Zend\Http;
 use ZendOAuth\Client as OAuthClient;
 use ZendOAuth\Consumer as OAuthConsumer;
@@ -25,6 +26,14 @@ use Zend\Http\Client\Adapter\Curl as CurlAdapter;
 
 class TwitterTest extends TestCase
 {
+    public function setUp()
+    {
+        $twitter = new Twitter\Twitter();
+        $r = new ReflectionProperty($twitter, 'jsonFlags');
+        $r->setAccessible(true);
+        $this->jsonFlags = $r->getValue($twitter);
+    }
+
     /**
      * Quick reusable OAuth client stub setup. Its purpose is to fake
      * HTTP interactions with Twitter so the component can focus on what matters:
@@ -58,9 +67,18 @@ class TwitterTest extends TestCase
         $client->setHeaders(['Accept-Charset' => 'ISO-8859-1,utf-8'])->will([$client, 'reveal']);
         $client->clearCookies()->will([$client, 'reveal']);
         $client->getCookies()->willReturn([]);
-        if (null !== $params) {
-            $setter = 'setParameter' . ucfirst(strtolower($method));
-            $client->$setter($params)->shouldBeCalled();
+        if (null !== $params && $method === 'GET') {
+            $client->setParameterGet($params)->shouldBeCalled();
+        }
+        if (null !== $params && $method === 'POST') {
+            $requestBody = json_encode($params, $this->jsonFlags);
+            $client->setRawBody($requestBody)->shouldBeCalled();
+
+            $headers = $this->prophesize(Http\Headers::class);
+            $headers->addHeaderLine('Content-Type', 'application/json')->shouldBeCalled();
+            $request = $this->prophesize(Http\Request::class);
+            $request->getHeaders()->will([$headers, 'reveal']);
+            $client->getRequest()->will([$request, 'reveal']);
         }
 
         $response = $this->prophesize(Http\Response::class);
