@@ -55,9 +55,10 @@ class MediaTest extends TestCase
         ])->shouldBeCalled();
         $this->client->setMethod('POST')->shouldBeCalled();
         $this->client->setParameterPost([
-            'command'     => 'INIT',
-            'media_type'  => 'image/png',
-            'total_bytes' => filesize(__FILE__),
+            'command'        => 'INIT',
+            'media_category' => 'tweet_image',
+            'media_type'     => 'image/png',
+            'total_bytes'    => filesize(__FILE__),
         ])->shouldBeCalled();
 
         $response = $this->prophesize(Response::class);
@@ -85,9 +86,10 @@ class MediaTest extends TestCase
         ])->shouldBeCalled();
         $this->client->setMethod('POST')->shouldBeCalled();
         $this->client->setParameterPost([
-            'command'     => 'INIT',
-            'media_type'  => 'image/png',
-            'total_bytes' => filesize(__FILE__),
+            'command'        => 'INIT',
+            'media_category' => 'tweet_image',
+            'media_type'     => 'image/png',
+            'total_bytes'    => filesize(__FILE__),
         ])->shouldBeCalled();
 
         $response = $this->prophesize(Response::class);
@@ -118,9 +120,10 @@ class MediaTest extends TestCase
         ])->shouldBeCalledTimes(2);
         $this->client->setMethod('POST')->shouldBeCalledTimes(2);
         $this->client->setParameterPost([
-            'command'     => 'INIT',
-            'media_type'  => 'image/png',
-            'total_bytes' => filesize(__FILE__),
+            'command'        => 'INIT',
+            'media_category' => 'tweet_image',
+            'media_type'     => 'image/png',
+            'total_bytes'    => filesize(__FILE__),
         ])->shouldBeCalled();
 
         $this->client->setParameterPost(Argument::that(function ($arg) use (&$commands) {
@@ -172,6 +175,119 @@ class MediaTest extends TestCase
             TestCase::assertInternalType('array', $arg);
             TestCase::assertArrayHasKey('command', $arg);
             $commands[] = $arg['command'];
+            return true;
+        }))->shouldBeCalledTimes(3);
+
+        $initResponse = $this->prophesize(Response::class);
+        $initResponse->getBody()->willReturn('{"media_id": "XXXX"}');
+        $initResponse->getHeaders()->willReturn(null);
+        $initResponse->isSuccess()->willReturn(true);
+
+        $appendResponse = $this->prophesize(Response::class);
+        $appendResponse->getBody()->willReturn('{}');
+        $appendResponse->getHeaders()->willReturn(null);
+        $appendResponse->isSuccess()->willReturn(true);
+
+        $finalizeResponse = $this->prophesize(Response::class);
+        $finalizeResponse->getBody()->willReturn('{}');
+        $finalizeResponse->getHeaders()->willReturn(null);
+
+        $client->send()->willReturn(
+            $initResponse->reveal(),
+            $appendResponse->reveal(),
+            $finalizeResponse->reveal()
+        );
+
+        $response = $media->upload($client->reveal());
+        $this->assertInstanceOf(TwitterResponse::class, $response);
+        $this->assertAttributeSame($finalizeResponse->reveal(), 'httpResponse', $response);
+        $this->assertEquals(['INIT', 'APPEND', 'FINALIZE'], $commands);
+    }
+
+    public function testAllowsMarkingMediaAsForDirectMessageButUnshared()
+    {
+        $media = new Media(__FILE__, 'image/png', true, false);
+
+        $r = new ReflectionProperty($media, 'chunkSize');
+        $r->setAccessible(true);
+        $r->setValue($media, 4 * filesize(__FILE__));
+
+        $client = $this->client;
+        $client->setUri(Media::UPLOAD_BASE_URI)->shouldBeCalled();
+        $client->resetParameters()->shouldBeCalled();
+        $client->setHeaders([
+            'Content-type' => 'application/x-www-form-urlencoded'
+        ])->shouldBeCalledTimes(3);
+        $client->setMethod('POST')->shouldBeCalledTimes(3);
+
+        $commands = [];
+        $client->setParameterPost(Argument::that(function ($arg) use (&$commands) {
+            TestCase::assertInternalType('array', $arg);
+            TestCase::assertArrayHasKey('command', $arg);
+            $commands[] = $arg['command'];
+
+            if ('INIT' === $arg['command']) {
+                TestCase::assertArrayHasKey('media_category', $arg);
+                TestCase::assertEquals('dm_image', $arg['media_category']);
+                TestCase::assertArrayNotHasKey('shared', $arg);
+            }
+            return true;
+        }))->shouldBeCalledTimes(3);
+
+        $initResponse = $this->prophesize(Response::class);
+        $initResponse->getBody()->willReturn('{"media_id": "XXXX"}');
+        $initResponse->getHeaders()->willReturn(null);
+        $initResponse->isSuccess()->willReturn(true);
+
+        $appendResponse = $this->prophesize(Response::class);
+        $appendResponse->getBody()->willReturn('{}');
+        $appendResponse->getHeaders()->willReturn(null);
+        $appendResponse->isSuccess()->willReturn(true);
+
+        $finalizeResponse = $this->prophesize(Response::class);
+        $finalizeResponse->getBody()->willReturn('{}');
+        $finalizeResponse->getHeaders()->willReturn(null);
+
+        $client->send()->willReturn(
+            $initResponse->reveal(),
+            $appendResponse->reveal(),
+            $finalizeResponse->reveal()
+        );
+
+        $response = $media->upload($client->reveal());
+        $this->assertInstanceOf(TwitterResponse::class, $response);
+        $this->assertAttributeSame($finalizeResponse->reveal(), 'httpResponse', $response);
+        $this->assertEquals(['INIT', 'APPEND', 'FINALIZE'], $commands);
+    }
+
+    public function testAllowsMarkingMediaForDirectMessageAndShared()
+    {
+        $media = new Media(__FILE__, 'image/png', true, true);
+
+        $r = new ReflectionProperty($media, 'chunkSize');
+        $r->setAccessible(true);
+        $r->setValue($media, 4 * filesize(__FILE__));
+
+        $client = $this->client;
+        $client->setUri(Media::UPLOAD_BASE_URI)->shouldBeCalled();
+        $client->resetParameters()->shouldBeCalled();
+        $client->setHeaders([
+            'Content-type' => 'application/x-www-form-urlencoded'
+        ])->shouldBeCalledTimes(3);
+        $client->setMethod('POST')->shouldBeCalledTimes(3);
+
+        $commands = [];
+        $client->setParameterPost(Argument::that(function ($arg) use (&$commands) {
+            TestCase::assertInternalType('array', $arg);
+            TestCase::assertArrayHasKey('command', $arg);
+            $commands[] = $arg['command'];
+
+            if ('INIT' === $arg['command']) {
+                TestCase::assertArrayHasKey('media_category', $arg);
+                TestCase::assertEquals('dm_image', $arg['media_category']);
+                TestCase::assertArrayHasKey('shared', $arg);
+                TestCase::assertTrue($arg['shared']);
+            }
             return true;
         }))->shouldBeCalledTimes(3);
 

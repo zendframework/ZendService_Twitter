@@ -29,9 +29,19 @@ class Media
     private $fileOperationError;
 
     /**
+     * @var bool Whether or not the media upload is for a direct message.
+     */
+    private $forDirectMessage;
+
+    /**
      * @var string Filename of image to upload.
      */
     private $imageFilename = '';
+
+    /**
+     * @var string Media category to use when media is for a direct message.
+     */
+    private $mediaCategory;
 
     /**
      * @var string|int Media identifier provided by Twitter following upload.
@@ -48,10 +58,22 @@ class Media
      */
     private $segmentIndex = 0;
 
-    public function __construct(string $imageFilename, string $mediaType)
-    {
+    /**
+     * @var bool Whether or not the media will be shared across multiple
+     *     direct messages.
+     */
+    private $shared;
+
+    public function __construct(
+        string $imageFilename,
+        string $mediaType,
+        bool $forDirectMessage = false,
+        bool $shared = false
+    ) {
         $this->imageFilename = $imageFilename;
         $this->mediaType = $mediaType;
+        $this->forDirectMessage = $forDirectMessage;
+        $this->shared = $shared;
     }
 
     /**
@@ -93,10 +115,15 @@ class Media
     private function initUpload(Client $httpClient, string $mediaType, int $totalBytes) : Response
     {
         $payload = [
-            'command'     => 'INIT',
-            'media_type'  => $mediaType,
-            'total_bytes' => $totalBytes,
+            'command'        => 'INIT',
+            'media_category' => $this->deriveMediaCategeory($mediaType, $this->forDirectMessage),
+            'media_type'     => $mediaType,
+            'total_bytes'    => $totalBytes,
         ];
+
+        if ($this->forDirectMessage && $this->shared) {
+            $payload['shared'] = true;
+        }
 
         $httpClient->resetParameters();
         $httpClient->setHeaders(['Content-type' => 'application/x-www-form-urlencoded']);
@@ -219,5 +246,24 @@ class Media
             $this->fileOperationError = $errstr;
             return true;
         };
+    }
+
+    private function deriveMediaCategeory(string $mediaType, bool $forDirectMessage) : string
+    {
+        switch (true) {
+            case ('image/gif' === strtolower($mediaType)):
+                $category = 'gif';
+                break;
+            case (preg_match('#^video/#i', $mediaType)):
+                $category = 'video';
+                break;
+            case (preg_match('#^image/#i', $mediaType)):
+                // fall-through
+            default:
+                $category = 'image';
+                break;
+        }
+        $prefix = $forDirectMessage ? 'dm_' : 'tweet_';
+        return $prefix . $category;
     }
 }
