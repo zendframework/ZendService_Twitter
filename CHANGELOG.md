@@ -97,6 +97,32 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Changed
 
+- [#44](https://github.com/zendframework/ZendService_Twitter/pull/44) modifies
+  the visibility of both `get()` and `post()` to make them public; additionally,
+  each also now initializes the request, and returns a
+  `ZendService\Twitter\Response` instance, allowing them to be used to access
+  API endpoints not yet directly supported in the `Twitter` class. As examples:
+
+  ```php
+  // Retrieve a list of friends for a user:
+  $response = $twitter->get('friends/list', ['screen_name' => 'zfdevteam']);
+  foreach ($response->users as $user) {
+      printf("- %s (%s)\n", $user->name, $user->screen_name);
+  }
+
+  // Add a tweet to a collection:
+  $response = $twitter->post('collections/entries/add', [
+      'id' => $collectionId,
+      'tweet_id' => $statusId,
+  ]);
+  if ($response->isError()) {
+      echo "Error adding tweet to collection:\n";
+      foreach ($response->response->errors as $error) {
+          printf("- %s: %s\n", $error->change->tweet_id, $error->reason);
+      }
+  }
+  ```
+
 - [#41](https://github.com/zendframework/ZendService_Twitter/pull/41) modifies
   how the `Twitter` class sends `POST` requests to send JSON payloads instead of
   `application/x-www-form-urlencoded`. All payloads except those for media
