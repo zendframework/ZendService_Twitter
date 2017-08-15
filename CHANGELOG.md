@@ -28,6 +28,36 @@ All notable changes to this project will be documented in this file, in reverse 
   );
   ```
 
+- [#42](https://github.com/zendframework/ZendService_Twitter/pull/42) adds
+  support for attaching media to direct messages. To do so, first upload an
+  image, marking the image for a direct message; you can also optionally mark it
+  to _share_, in which case you can re-use the returned media identifier with
+  multiple direct messages:
+
+  ```php
+  $image = new Image(
+      'data/logo.png',
+      'image/png',
+      $forDirectMessage = true,
+      $shared = false
+  );
+  $upload = $image->upload($client);
+  ```
+
+  Once you have the media identifier, you can provide it via an extra parameter
+  to the `directMessagesNew()` method, or the new `directMessagesEventNew()`
+  method (which more closely corresponds to the API endpoint):
+
+  ```php
+  $twitter->directmessagesEventsNew(
+      $user,
+      $message,
+      ['media_id' => $upload->id_str]
+  );
+  ```
+
+  Direct messages only support one attachment at a time.
+
 - [#34](https://github.com/zendframework/ZendService_Twitter/pull/34) adds
   support for Twitter's rate limit headers. Returned responses allow you to
   query them via `getRateLimit()`, and the returned
