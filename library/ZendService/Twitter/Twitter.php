@@ -979,15 +979,36 @@ class Twitter
      * Show a single status
      *
      * @param  int $id Id of status to show
+     * @param  array $options Possible list of query options
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
      * @return Response
      */
-    public function statusesShow($id)
+    public function statusesShow($id, array $options = [])
     {
         $this->init();
         $path = 'statuses/show/' . $this->validInteger($id);
-        $response = $this->get($path);
+        $params = [];
+        foreach ($options as $key => $value) {
+            switch (strtolower($key)) {
+                case 'tweet_mode':
+                    unset($params[$key]);
+                    $params['tweet_mode'] = 'extended';
+                    break;
+                case 'include_entities':
+                    $params[strtolower($key)] = (bool) $value;
+                    break;
+                case 'trim_user':
+                    $params[strtolower($key)] = (bool) $value;
+                    break;
+                case 'include_my_retweet':
+                    $params[strtolower($key)] = (bool) $value;
+                    break;
+                default:
+                    break;
+            }
+        }
+        $response = $this->get($path, $params);
         return new Response($response);
     }
 

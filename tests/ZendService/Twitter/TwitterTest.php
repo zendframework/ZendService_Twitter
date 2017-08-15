@@ -1002,4 +1002,30 @@ class TwitterTest extends TestCase
         $response = $twitter->directMessages->new('1', 'Message', ['media_id' => 'XXXX']);
         $this->assertInstanceOf(TwitterResponse::class, $response);
     }
+
+    public function testStatusesShowWillPassAdditionalOptionsWhenPresent()
+    {
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'statuses/show/12345.json',
+            Http\Request::METHOD_GET,
+            'statuses.show.json',
+            [
+                'tweet_mode' => 'extended',
+                'include_entities' => true,
+                'trim_user' => true,
+                'include_my_retweet' => true,
+            ]
+        ));
+
+        $finalResponse = $twitter->statuses->show(12345, [
+            'tweet_mode' => true,
+            'include_entities' => true,
+            'trim_user' => true,
+            'include_my_retweet' => true,
+            'should_not_be_included' => true,
+        ]);
+
+        $this->assertInstanceOf(TwitterResponse::class, $finalResponse);
+    }
 }
