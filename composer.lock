@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "77dbd7cc3e3192bbf57f7e16fd5e841e",
+    "content-hash": "f51295e9aae1b92f01c7e016e85930cb",
     "packages": [
         {
             "name": "container-interop/container-interop",
@@ -705,16 +705,16 @@
         },
         {
             "name": "zendframework/zend-validator",
-            "version": "2.9.2",
+            "version": "2.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/zendframework/zend-validator.git",
-                "reference": "a58dbe8463b93de0d650e296d56cb7da4a129ff3"
+                "reference": "07ef29e31353592e99eb32b2feb7248681ffb630"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/zendframework/zend-validator/zipball/a58dbe8463b93de0d650e296d56cb7da4a129ff3",
-                "reference": "a58dbe8463b93de0d650e296d56cb7da4a129ff3",
+                "url": "https://api.github.com/repos/zendframework/zend-validator/zipball/07ef29e31353592e99eb32b2feb7248681ffb630",
+                "reference": "07ef29e31353592e99eb32b2feb7248681ffb630",
                 "shasum": ""
             },
             "require": {
@@ -733,7 +733,7 @@
                 "zendframework/zend-i18n": "^2.6",
                 "zendframework/zend-math": "^2.6",
                 "zendframework/zend-servicemanager": "^2.7.5 || ^3.0.3",
-                "zendframework/zend-session": "^2.6.2",
+                "zendframework/zend-session": "^2.8",
                 "zendframework/zend-uri": "^2.5"
             },
             "suggest": {
@@ -743,14 +743,14 @@
                 "zendframework/zend-i18n-resources": "Translations of validator messages",
                 "zendframework/zend-math": "Zend\\Math component, required by the Csrf validator",
                 "zendframework/zend-servicemanager": "Zend\\ServiceManager component to allow using the ValidatorPluginManager and validator chains",
-                "zendframework/zend-session": "Zend\\Session component, required by the Csrf validator",
+                "zendframework/zend-session": "Zend\\Session component, ^2.8; required by the Csrf validator",
                 "zendframework/zend-uri": "Zend\\Uri component, required by the Uri and Sitemap\\Loc validators"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.9-dev",
-                    "dev-develop": "2.10-dev"
+                    "dev-master": "2.10-dev",
+                    "dev-develop": "2.11-dev"
                 },
                 "zf": {
                     "component": "Zend\\Validator",
@@ -772,7 +772,7 @@
                 "validator",
                 "zf2"
             ],
-            "time": "2017-07-20T16:44:59+00:00"
+            "time": "2017-08-14T20:36:46+00:00"
         },
         {
             "name": "zendframework/zendoauth",
@@ -1077,16 +1077,16 @@
         },
         {
             "name": "phpdocumentor/reflection-docblock",
-            "version": "3.2.1",
+            "version": "3.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/ReflectionDocBlock.git",
-                "reference": "183824db76118b9dddffc7e522b91fa175f75119"
+                "reference": "4aada1f93c72c35e22fb1383b47fee43b8f1d157"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/183824db76118b9dddffc7e522b91fa175f75119",
-                "reference": "183824db76118b9dddffc7e522b91fa175f75119",
+                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/4aada1f93c72c35e22fb1383b47fee43b8f1d157",
+                "reference": "4aada1f93c72c35e22fb1383b47fee43b8f1d157",
                 "shasum": ""
             },
             "require": {
@@ -1118,7 +1118,7 @@
                 }
             ],
             "description": "With this component, a library can provide support for annotations via DocBlocks or otherwise retrieve information that is embedded in a DocBlock.",
-            "time": "2017-08-04T20:55:59+00:00"
+            "time": "2017-08-08T06:39:58+00:00"
         },
         {
             "name": "phpdocumentor/type-resolver",
@@ -2349,6 +2349,35 @@
                 "validate"
             ],
             "time": "2016-11-23T20:04:58+00:00"
+        },
+        {
+            "name": "zendframework/zend-coding-standard",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/zendframework/zend-coding-standard.git",
+                "reference": "893316d2904e93f1c74c1384b6d7d57778299cb6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/zendframework/zend-coding-standard/zipball/893316d2904e93f1c74c1384b6d7d57778299cb6",
+                "reference": "893316d2904e93f1c74c1384b6d7d57778299cb6",
+                "shasum": ""
+            },
+            "require": {
+                "squizlabs/php_codesniffer": "^2.7"
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": "Zend Framework coding standard",
+            "keywords": [
+                "Coding Standard",
+                "zf"
+            ],
+            "time": "2016-11-09T21:30:43+00:00"
         }
     ],
     "aliases": [],
