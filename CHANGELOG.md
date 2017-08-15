@@ -56,6 +56,12 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Changed
 
+- [#41](https://github.com/zendframework/ZendService_Twitter/pull/41) modifies
+  how the `Twitter` class sends `POST` requests to send JSON payloads instead of
+  `application/x-www-form-urlencoded`. All payloads except those for media
+  uploads support this, and several newer endpoints (such as methods for
+  allowing direct message media attachments) now require them.
+
 - [#40](https://github.com/zendframework/ZendService_Twitter/pull/40) updates
   direct message support to set the character limit to 10k, as documented
   currently for the Twitter API.
