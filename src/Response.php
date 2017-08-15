@@ -24,23 +24,37 @@ use Zend\Json\Json;
  * - method for retrieving the raw JSON
  * - method for retrieving the decoded response
  * - proxying to elements of the decoded response via property overloading
+ * - method for retrieving a RateLimit instance with derived rate-limit headers
  */
 class Response
 {
     /**
+     * Empty body content that should not result in response population.
+     */
+    private $emptyBodyContent = [
+        null,
+        '',
+    ];
+
+    /**
      * @var HttpResponse
      */
-    protected $httpResponse;
+    private $httpResponse;
 
     /**
      * @var array|\stdClass
      */
-    protected $jsonBody;
+    private $jsonBody;
+
+    /**
+     * @var RateLimit
+     */
+    private $rateLimit;
 
     /**
      * @var string
      */
-    protected $rawBody;
+    private $rawBody;
 
     /**
      * Constructor
@@ -48,21 +62,17 @@ class Response
      * Assigns the HttpResponse to a property, as well as the body
      * representation. It then attempts to decode the body as JSON.
      *
-     * @param  HttpResponse $httpResponse
+     * @param  null|HttpResponse $httpResponse
      * @throws Exception\DomainException if unable to decode JSON response
      */
-    public function __construct(HttpResponse $httpResponse)
+    public function __construct(HttpResponse $httpResponse = null)
     {
         $this->httpResponse = $httpResponse;
-        $this->rawBody      = $httpResponse->getBody();
-        try {
-            $jsonBody = Json::decode($this->rawBody, Json::TYPE_OBJECT);
-            $this->jsonBody = $jsonBody;
-        } catch (JsonException $e) {
-            throw new Exception\DomainException(sprintf(
-                'Unable to decode response from twitter: %s',
-                $e->getMessage()
-            ), 0, $e);
+
+        if ($httpResponse
+            && ! in_array($httpResponse->getBody(), $this->emptyBodyContent, true)
+        ) {
+            $this->populate($httpResponse);
         }
     }
 
@@ -72,10 +82,9 @@ class Response
      * If a named property exists within the JSON response returned,
      * proxies to it. Otherwise, returns null.
      *
-     * @param  string $name
      * @return mixed
      */
-    public function __get($name)
+    public function __get(string $name)
     {
         if (null === $this->jsonBody) {
             return null;
@@ -88,20 +97,16 @@ class Response
 
     /**
      * Was the request successful?
-     *
-     * @return bool
      */
-    public function isSuccess()
+    public function isSuccess() : bool
     {
         return $this->httpResponse->isSuccess();
     }
 
     /**
      * Did an error occur in the request?
-     *
-     * @return bool
      */
-    public function isError()
+    public function isError() : bool
     {
         return ! $this->httpResponse->isSuccess();
     }
@@ -115,10 +120,9 @@ class Response
      *
      * If the response was successful, an empty array is returned.
      *
-     * @return array
      * @throws Exception\DomainException if unable to detect structure of error response
      */
-    public function getErrors()
+    public function getErrors() : array
     {
         if (! $this->isError()) {
             return [];
@@ -135,10 +139,8 @@ class Response
 
     /**
      * Retrieve the raw response body
-     *
-     * @return string
      */
-    public function getRawResponse()
+    public function getRawResponse() : string
     {
         return $this->rawBody;
     }
@@ -151,5 +153,36 @@ class Response
     public function toValue()
     {
         return $this->jsonBody;
+    }
+
+    /**
+     * Retun the RateLimit object associated with the response.
+     */
+    public function getRateLimit() : RateLimit
+    {
+        return $this->rateLimit;
+    }
+
+    /**
+     * Populates the object with info. This can possibly called from the
+     * constructor, or it can be called later.
+     *
+     * @throws Exception\DomainException if an error occurs parsing the response.
+     */
+    private function populate(HttpResponse $httpResponse = null) : void
+    {
+        $this->httpResponse = $httpResponse;
+        $this->rawBody = $httpResponse->getBody();
+        $this->rateLimit = new RateLimit($this->httpResponse->getHeaders());
+
+        try {
+            $jsonBody = Json::decode($this->rawBody, Json::TYPE_OBJECT);
+            $this->jsonBody = $jsonBody;
+        } catch (JsonException $e) {
+            throw new Exception\DomainException(sprintf(
+                'Unable to decode response from twitter: %s',
+                $e->getMessage()
+            ), 0, $e);
+        }
     }
 }
