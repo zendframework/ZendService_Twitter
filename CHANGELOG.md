@@ -58,6 +58,17 @@ All notable changes to this project will be documented in this file, in reverse 
 
   Direct messages only support one attachment at a time.
 
+- [#37](https://github.com/zendframework/ZendService_Twitter/pull/37) and
+  [#43](https://github.com/zendframework/ZendService_Twitter/pull/43) add
+  support for returning media entities when calling `statusesShow()`. The method
+  now allows a second, optional argument, `$options`, which may contain the
+  following keys to pass to the Twitter API:
+
+  - `tweet_mode`; if present, it will be passed as the value `extended`.
+  - `include_entities`
+  - `trim_user`
+  - `include_my_retweet`
+
 - [#34](https://github.com/zendframework/ZendService_Twitter/pull/34) adds
   support for Twitter's rate limit headers. Returned responses allow you to
   query them via `getRateLimit()`, and the returned
