@@ -28,14 +28,6 @@ use Zend\Json\Json;
 class Response
 {
     /**
-     * Empty body content that should not result in response population.
-     */
-    private $emptyBodyContent = [
-        null,
-        '',
-    ];
-
-    /**
      * @var HttpResponse
      */
     protected $httpResponse;
@@ -51,9 +43,17 @@ class Response
     protected $rawBody;
 
     /**
+     * Empty body content that should not result in response population.
+     */
+    private $emptyBodyContent = [
+        null,
+        '',
+    ];
+
+    /**
      * @var RateLimit
      */
-    protected $rateLimit;
+    private $rateLimit;
 
     /**
      * Constructor
@@ -100,7 +100,7 @@ class Response
      *
      * @return bool
      */
-    public function isSuccess()
+    public function isSuccess() : bool
     {
         return $this->httpResponse->isSuccess();
     }
@@ -110,7 +110,7 @@ class Response
      *
      * @return bool
      */
-    public function isError()
+    public function isError() : bool
     {
         return ! $this->httpResponse->isSuccess();
     }
@@ -124,10 +124,9 @@ class Response
      *
      * If the response was successful, an empty array is returned.
      *
-     * @return array
      * @throws Exception\DomainException if unable to detect structure of error response
      */
-    public function getErrors()
+    public function getErrors() : array
     {
         if (! $this->isError()) {
             return [];
@@ -144,10 +143,8 @@ class Response
 
     /**
      * Retrieve the raw response body
-     *
-     * @return string
      */
-    public function getRawResponse()
+    public function getRawResponse() : string
     {
         return $this->rawBody;
     }
@@ -163,11 +160,9 @@ class Response
     }
 
     /**
-     * Retun the RateLimit object
-     *
-     * @return RateLimit
+     * Retun the RateLimit object associated with the response.
      */
-    public function getRateLimit()
+    public function getRateLimit() : RateLimit
     {
         return $this->rateLimit;
     }
@@ -176,10 +171,9 @@ class Response
      * Populates the object with info. This can possibly called from the
      * constructor, or it can be called later.
      *
-     * @param  null|HttpResponse $httpResponse
-     * @return void
+     * @throws Exception\DomainException if an error occurs parsing the response.
      */
-    private function populate(HttpResponse $httpResponse = null)
+    private function populate(HttpResponse $httpResponse = null) : void
     {
         $this->httpResponse = $httpResponse;
         $this->rawBody = $httpResponse->getBody();

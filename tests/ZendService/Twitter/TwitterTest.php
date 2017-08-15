@@ -10,7 +10,7 @@
 
 namespace ZendTest\Twitter;
 
-use PHPUnit_Framework_TestCase as TestCase;
+use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Zend\Http;
 use ZendOAuth\Client as OAuthClient;
@@ -194,7 +194,7 @@ class TwitterTest extends TestCase
 
     public function testAuthorisationFailureWithUsernameAndNoAccessToken()
     {
-        $this->setExpectedException(Twitter\Exception\ExceptionInterface::class);
+        $this->expectException(Twitter\Exception\ExceptionInterface::class);
         $twitter = new Twitter\Twitter(['username' => 'me']);
         $twitter->statusesPublicTimeline();
     }
@@ -237,7 +237,7 @@ class TwitterTest extends TestCase
      */
     public function testRetrievingStatusesWithInvalidScreenNameCharacterThrowsInvalidScreenNameException()
     {
-        $this->setExpectedException(Twitter\Exception\ExceptionInterface::class);
+        $this->expectException(Twitter\Exception\ExceptionInterface::class);
         $twitter = new Twitter\Twitter();
         $twitter->statuses->userTimeline(['screen_name' => 'abc.def']);
     }
@@ -247,7 +247,7 @@ class TwitterTest extends TestCase
      */
     public function testRetrievingStatusesWithInvalidScreenNameLengthThrowsInvalidScreenNameException()
     {
-        $this->setExpectedException(Twitter\Exception\ExceptionInterface::class);
+        $this->expectException(Twitter\Exception\ExceptionInterface::class);
         $twitter = new Twitter\Twitter();
         $twitter->statuses->userTimeline(['screen_name' => 'abcdef_abc123_abc123x']);
     }
@@ -291,14 +291,14 @@ class TwitterTest extends TestCase
 
     public function testOverloadingGetShouldthrowExceptionWithInvalidMethodType()
     {
-        $this->setExpectedException(Twitter\Exception\ExceptionInterface::class);
+        $this->expectException(Twitter\Exception\ExceptionInterface::class);
         $twitter = new Twitter\Twitter;
         $return = $twitter->foo;
     }
 
     public function testOverloadingGetShouldthrowExceptionWithInvalidFunction()
     {
-        $this->setExpectedException(Twitter\Exception\ExceptionInterface::class);
+        $this->expectException(Twitter\Exception\ExceptionInterface::class);
         $twitter = new Twitter\Twitter;
         $return = $twitter->foo();
     }
@@ -317,7 +317,7 @@ class TwitterTest extends TestCase
 
     public function testMethodProxyingThrowExceptionsWithInvalidMethods()
     {
-        $this->setExpectedException(Twitter\Exception\ExceptionInterface::class);
+        $this->expectException(Twitter\Exception\ExceptionInterface::class);
         $twitter = new Twitter\Twitter;
         $twitter->statuses->foo();
     }
@@ -439,14 +439,14 @@ class TwitterTest extends TestCase
 
     public function testPostStatusUpdateToLongShouldThrowException()
     {
-        $this->setExpectedException(Twitter\Exception\ExceptionInterface::class);
+        $this->expectException(Twitter\Exception\ExceptionInterface::class);
         $twitter = new Twitter\Twitter;
         $twitter->statuses->update('Test Message - ' . str_repeat(' Hello ', 140));
     }
 
     public function testPostStatusUpdateEmptyShouldThrowException()
     {
-        $this->setExpectedException(Twitter\Exception\ExceptionInterface::class);
+        $this->expectException(Twitter\Exception\ExceptionInterface::class);
         $twitter = new Twitter\Twitter;
         $twitter->statuses->update('');
     }
