@@ -21,7 +21,7 @@ class Media
     /**
      * @var int The maximum number of bytes to send to Twitter per request.
      */
-    protected $chunkSize = (1024 * 1024) * 4;
+    private $chunkSize = (1024 * 1024) * 4;
 
     /**
      * @var string Error message from f*() operations.

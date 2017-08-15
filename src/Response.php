@@ -24,24 +24,10 @@ use Zend\Json\Json;
  * - method for retrieving the raw JSON
  * - method for retrieving the decoded response
  * - proxying to elements of the decoded response via property overloading
+ * - method for retrieving a RateLimit instance with derived rate-limit headers
  */
 class Response
 {
-    /**
-     * @var HttpResponse
-     */
-    protected $httpResponse;
-
-    /**
-     * @var array|\stdClass
-     */
-    protected $jsonBody;
-
-    /**
-     * @var string
-     */
-    protected $rawBody;
-
     /**
      * Empty body content that should not result in response population.
      */
@@ -51,9 +37,24 @@ class Response
     ];
 
     /**
+     * @var HttpResponse
+     */
+    private $httpResponse;
+
+    /**
+     * @var array|\stdClass
+     */
+    private $jsonBody;
+
+    /**
      * @var RateLimit
      */
     private $rateLimit;
+
+    /**
+     * @var string
+     */
+    private $rawBody;
 
     /**
      * Constructor
@@ -81,10 +82,9 @@ class Response
      * If a named property exists within the JSON response returned,
      * proxies to it. Otherwise, returns null.
      *
-     * @param  string $name
      * @return mixed
      */
-    public function __get($name)
+    public function __get(string $name)
     {
         if (null === $this->jsonBody) {
             return null;
@@ -97,8 +97,6 @@ class Response
 
     /**
      * Was the request successful?
-     *
-     * @return bool
      */
     public function isSuccess() : bool
     {
@@ -107,8 +105,6 @@ class Response
 
     /**
      * Did an error occur in the request?
-     *
-     * @return bool
      */
     public function isError() : bool
     {

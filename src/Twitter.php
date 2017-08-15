@@ -1,23 +1,23 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2014 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
- * @package   Zend_Service
+ * @see       https://github.com/zendframework/ZendService_Twitter for the canonical source repository
+ * @copyright Copyright (c) 2005-2017 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   https://github.com/zendframework/ZendService_Twitter/blob/master/LICENSE.md New BSD License
  */
 
 namespace ZendService\Twitter;
 
 use Traversable;
-use Zend\Http;
 use ZendOAuth as OAuth;
+use Zend\Http;
 use Zend\Stdlib\ArrayUtils;
 use Zend\Uri;
 
 /**
- * @todo Mark all properties as private when preparing a new major version.
+ * Interact with the Twitter API.
+ *
+ * Note: most `$id` parameters accept either string or integer values. This is
+ * due to the fact that identifiers in the Twitter API may exceed PHP_INT_MAX.
  */
 class Twitter
 {
@@ -44,67 +44,19 @@ class Twitter
     /**
      * @var array
      */
-    protected $cookieJar;
+    private $cookieJar;
 
     /**
      * Date format for 'since' strings
      *
      * @var string
      */
-    protected $dateFormat = 'D, d M Y H:i:s T';
+    private $dateFormat = 'D, d M Y H:i:s T';
 
     /**
      * @var Http\Client|null
      */
-    protected $httpClient;
-
-    /**
-     * Current method type (for method proxying)
-     *
-     * @var string|null
-     */
-    protected $methodType;
-
-    /**
-     * Oauth Consumer
-     *
-     * @var OAuth\Consumer|null
-     */
-    protected $oauthConsumer;
-
-    /**
-     * Types of API methods
-     *
-     * @var array
-     */
-    protected $methodTypes = [
-        'account',
-        'application',
-        'blocks',
-        'directmessages',
-        'favorites',
-        'friends',
-        'friendships',
-        'followers',
-        'search',
-        'statuses',
-        'users',
-        'lists',
-    ];
-
-    /**
-     * Options passed to constructor
-     *
-     * @var array
-     */
-    protected $options = [];
-
-    /**
-     * Username
-     *
-     * @var string
-     */
-    protected $username;
+    private $httpClient;
 
     /**
      * Flags to use with json_encode for POST requests
@@ -114,12 +66,55 @@ class Twitter
     private $jsonFlags = JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
 
     /**
-     * @param  null|array|Traversable $options
-     * @param  null|OAuth\Consumer $consumer
-     * @param  null|Http\Client $httpClient
+     * Current method type (for method proxying)
+     *
+     * @var string|null
      */
+    private $methodType;
+
+    /**
+     * Types of API methods
+     *
+     * @var array
+     */
+    private $methodTypes = [
+        'account',
+        'application',
+        'blocks',
+        'directmessages',
+        'favorites',
+        'followers',
+        'friends',
+        'friendships',
+        'lists',
+        'search',
+        'statuses',
+        'users',
+    ];
+
+    /**
+     * Oauth Consumer
+     *
+     * @var OAuth\Consumer|null
+     */
+    private $oauthConsumer;
+
+    /**
+     * Options passed to constructor
+     *
+     * @var array
+     */
+    private $options = [];
+
+    /**
+     * Username
+     *
+     * @var string
+     */
+    private $username;
+
     public function __construct(
-        $options = null,
+        iterable $options = null,
         OAuth\Consumer $consumer = null,
         Http\Client $httpClient = null
     ) {
@@ -197,13 +192,29 @@ class Twitter
     }
 
     /**
-     * Proxy service methods
+     * Proxy service methods.
      *
-     * @param  string $type
-     * @return Twitter
+     * Allows performing method proxy calls via property access; see {@link __call}
+     * for more details.
+     *
+     * Valid `$type` values currently include:
+     *
+     * - account
+     * - application
+     * - blocks
+     * - directmessages
+     * - favorites
+     * - followers
+     * - friends
+     * - friendships
+     * - lists
+     * - search
+     * - statuses
+     * - users
+     *
      * @throws Exception\DomainException If method not in method types list
      */
-    public function __get($type)
+    public function __get(string $type) : self
     {
         $type = strtolower($type);
         $type = str_replace('_', '', $type);
@@ -217,22 +228,42 @@ class Twitter
     }
 
     /**
-     * Method overloading
+     * Proxy method calls.
      *
-     * @param  string $method
-     * @param  array $params
+     * Acts as a method proxy in two ways.
+     *
+     * First, if the method exists on the `$oauthConsumer` property, it will call
+     * it using the provided parameters.
+     *
+     * Second, it will proxy to specific Twitter API segments. If the user requests
+     * a property of this class that maps to a known method type ({@link $methodTypes}),
+     * that value is stored in `$methodType` and the current instance is returned;
+     * method overloading then checks to see if `$methodType` + `$method` is a known
+     * method of this class, and, if so, calls it. (Underscores are stripped in both
+     * processes.)
+     *
+     * As examples:
+     *
+     * <code>
+     * $response = $twitter->search->tweets('#php');
+     * $response = $twitter->users->search('zfdevteam');
+     * $response = $twitter->users->search('zfdevteam');
+     * $response = $twitter->statuses->mentions_timeline('zfdevteam');
+     * </code>
+     *
      * @return mixed
      * @throws Exception\BadMethodCallException if unable to find method
      */
-    public function __call($method, $params)
+    public function __call(string $method, array $params)
     {
         if (method_exists($this->oauthConsumer, $method)) {
-            $return = call_user_func_array([$this->oauthConsumer, $method], $params);
+            $return = $this->oauthConsumer->$method(...$params);
             if ($return instanceof OAuth\Token\Access) {
                 $this->setHttpClient($return->getHttpClient($this->options));
             }
             return $return;
         }
+
         if (empty($this->methodType)) {
             throw new Exception\BadMethodCallException(
                 'Invalid method "' . $method . '"'
@@ -251,12 +282,9 @@ class Twitter
     }
 
     /**
-     * Set HTTP client
-     *
-     * @param Http\Client $client
-     * @return self
+     * Set HTTP client.
      */
-    public function setHttpClient(Http\Client $client)
+    public function setHttpClient(Http\Client $client) : self
     {
         $this->httpClient = $client;
         $this->httpClient->setHeaders(['Accept-Charset' => 'ISO-8859-1,utf-8']);
@@ -264,13 +292,11 @@ class Twitter
     }
 
     /**
-     * Get the HTTP client
+     * Get the HTTP client.
      *
-     * Lazy loads one if none present
-     *
-     * @return Http\Client
+     * Lazy loads one if none present.
      */
-    public function getHttpClient()
+    public function getHttpClient() : Http\Client
     {
         if (null === $this->httpClient) {
             $this->setHttpClient(new Http\Client());
@@ -279,155 +305,201 @@ class Twitter
     }
 
     /**
-     * Retrieve username
-     *
-     * @return string
+     * Retrieve username.
      */
-    public function getUsername()
+    public function getUsername() : ?string
     {
         return $this->username;
     }
 
     /**
-     * Set username
-     *
-     * @param  string $value
-     * @return self
+     * Set username.
      */
-    public function setUsername($value)
+    public function setUsername(string $value) : self
     {
         $this->username = $value;
         return $this;
     }
 
     /**
-     * Checks for an authorised state
-     *
-     * @return bool
+     * Checks for an authorised state.
      */
-    public function isAuthorised()
+    public function isAuthorised(Http\Client $client = null) : bool
     {
-        if ($this->getHttpClient() instanceof OAuth\Client) {
+        $client = $client ?: $this->getHttpClient();
+        if ($client instanceof OAuth\Client) {
             return true;
         }
         return false;
     }
 
     /**
-     * Verify Account Credentials
+     * Performs an HTTP GET request to the $path.
+     *
+     * Used internally for all Twitter API GET calls, this method returns a
+     * Response instance from a request made to API_BASE_URL + $path + '.json';
+     * if any $query parameters are provided, they are appended as the query
+     * string when the request is made.
+     *
+     * Call this method if you wish to make a GET request to an endpoint that
+     * does not yet have a corresponding method in this class. As an example:
+     *
+     * <code>
+     * $response = $twitter->get('friends/list', ['screen_name' => 'zfdevteam']);
+     * foreach ($response->users as $user) {
+     *     printf("- %s (%s)\n", $user->name, $user->screen_name);
+     * }
+     * </code>
+     *
+     * @param array $query Array of query string arguments
+     * @throws Http\Client\Exception\ExceptionInterface
+     */
+    public function get(string $path, array $query = []) : Response
+    {
+        $client = $this->getHttpClient();
+        $this->init($path, $client);
+        $client->setParameterGet($query);
+        $client->setMethod(Http\Request::METHOD_GET);
+        $response = $client->send();
+        return new Response($response);
+    }
+
+    /**
+     * Performs an HTTP POST request to $path.
+     *
+     * Used internally for all Twitter API POST calls, this method returns a
+     * Response instance from a request made to API_BASE_URL + $path + '.json'.
+     *
+     * $data may be:
+     *
+     * - null, in which case no request body is sent.
+     * - a string, in which case the value is used for the request body.
+     * - an array or object, in which case the value is passed to json_encode(),
+     *   and the resultant string passed as the request body.
+     *
+     * Call this method if you wish to make a POST request to an endpoint that
+     * does not yet have a corresponding method in this class. As an example:
+     *
+     * <code>
+     * $response = $twitter->post('collections/entries/add', [
+     *     'id' => $collectionId,
+     *     'tweet_id' => $statusId,
+     * ]);
+     * if ($response->isError()) {
+     *     echo "Error adding tweet to collection:\n";
+     *     foreach ($response->response->errors as $error) {
+     *         printf("- %s: %s\n", $error->change->tweet_id, $error->reason);
+     *     }
+     * }
+     * </code>
+     *
+     * @param string $path
+     * @param null|string|array|\stdClass $data Raw data to send
+     * @throws Http\Client\Exception\ExceptionInterface
+     */
+    public function post(string $path, $data = null) : Response
+    {
+        $client = $this->getHttpClient();
+        $this->init($path, $client);
+        $response = $this->performPost(Http\Request::METHOD_POST, $data, $client);
+        return new Response($response);
+    }
+
+    /**
+     * Verify account credentials.
      *
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function accountVerifyCredentials()
+    public function accountVerifyCredentials() : Response
     {
-        $this->init();
-        $response = $this->get('account/verify_credentials');
-        return new Response($response);
+        return $this->get('account/verify_credentials');
     }
 
     /**
      * Returns the number of api requests you have left per hour.
      *
-     * @todo   Have a separate payload object to represent rate limits
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function applicationRateLimitStatus()
+    public function applicationRateLimitStatus() : Response
     {
-        $this->init();
-        $response = $this->get('application/rate_limit_status');
-        return new Response($response);
+        return $this->get('application/rate_limit_status');
     }
 
     /**
      * Blocks the user specified in the ID parameter as the authenticating user.
+     *
      * Destroys a friendship to the blocked user if it exists.
      *
-     * @param  integer|string $id       The ID or screen name of a user to block.
+     * @param int|string $id The ID or screen name of a user to block.
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function blocksCreate($id)
+    public function blocksCreate($id) : Response
     {
-        $this->init();
         $path     = 'blocks/create';
         $params   = $this->createUserParameter($id, []);
-        $response = $this->post($path, $params);
-        return new Response($response);
+        return $this->post($path, $params);
     }
 
     /**
-     * Un-blocks the user specified in the ID parameter for the authenticating user
+     * Un-blocks the user specified in the ID parameter for the authenticating user.
      *
-     * @param  integer|string $id       The ID or screen_name of the user to un-block.
+     * @param int|string $id The ID or screen_name of the user to un-block.
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function blocksDestroy($id)
+    public function blocksDestroy($id) : Response
     {
-        $this->init();
         $path   = 'blocks/destroy';
         $params = $this->createUserParameter($id, []);
-        $response = $this->post($path, $params);
-        return new Response($response);
+        return $this->post($path, $params);
     }
 
     /**
-     * Returns an array of user ids that the authenticating user is blocking
+     * Returns an array of user ids that the authenticating user is blocking.
      *
-     * @param  integer $cursor  Optional. Specifies the cursor position at
-     *     which to begin listing ids; defaults to first "page" of results.
+     * @param int $cursor Optional. Specifies the cursor position at which to
+     *     begin listing ids; defaults to first "page" of results.
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function blocksIds($cursor = -1)
+    public function blocksIds(int $cursor = -1) : Response
     {
-        $this->init();
         $path = 'blocks/ids';
-        $response = $this->get($path, ['cursor' => $cursor]);
-        return new Response($response);
+        return $this->get($path, ['cursor' => $cursor]);
     }
 
     /**
-     * Returns an array of user objects that the authenticating user is blocking
+     * Returns an array of user objects that the authenticating user is blocking.
      *
-     * @param  integer $cursor  Optional. Specifies the cursor position at
-     *     which to begin listing ids; defaults to first "page" of results.
+     * @param int $cursor Optional. Specifies the cursor position at which to
+     *     begin listing ids; defaults to first "page" of results.
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function blocksList($cursor = -1)
+    public function blocksList(int $cursor = -1) : Response
     {
-        $this->init();
         $path = 'blocks/list';
-        $response = $this->get($path, ['cursor' => $cursor]);
-        return new Response($response);
+        return $this->get($path, ['cursor' => $cursor]);
     }
 
     /**
      * Destroy a direct message
      *
-     * @param  int $id ID of message to destroy
+     * @param  string|int $id ID of message to destroy.
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function directMessagesDestroy($id)
+    public function directMessagesDestroy($id) : Response
     {
-        $this->init();
-        $path     = 'direct_messages/destroy';
-        $params   = ['id' => $this->validInteger($id)];
-        $response = $this->post($path, $params);
-        return new Response($response);
+        $path   = 'direct_messages/destroy';
+        $params = ['id' => $this->validInteger($id)];
+        return $this->post($path, $params);
     }
 
     /**
-     * Retrieve direct messages for the current user
+     * Retrieve direct messages for the current user.
      *
-     * $options may include one or more of the following keys
+     * $options may include one or more of the following keys:
+     *
      * - count: return page X of results
      * - since_id: return statuses only greater than the one specified
      * - max_id: return statuses with an ID less than (older than) or equal to that specified
@@ -437,11 +509,9 @@ class Twitter
      * @param  array $options
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function directMessagesMessages(array $options = [])
+    public function directMessagesMessages(array $options = []) : Response
     {
-        $this->init();
         $path   = 'direct_messages';
         $params = [];
         foreach ($options as $key => $value) {
@@ -465,25 +535,22 @@ class Twitter
                     break;
             }
         }
-        $response = $this->get($path, $params);
-        return new Response($response);
+        return $this->get($path, $params);
     }
 
     /**
-     * Send a direct message to a user
+     * Send a direct message to a user.
      *
      * Proxies to `directMessagesEventsNew()`, as the `direct_messages/new`
      * path is deprecated.
      *
      * @param  int|string $user User to whom to send message
-     * @param  string $text Message to send to user
      * @throws Exception\InvalidArgumentException if message is empty
      * @throws Exception\OutOfRangeException if message is too long
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function directMessagesNew($user, $text, array $extraParams = [])
+    public function directMessagesNew($user, string $text, array $extraParams = []) : Response
     {
         return $this->directMessagesEventsNew($user, $text, $extraParams);
     }
@@ -502,7 +569,6 @@ class Twitter
      */
     public function directMessagesEventsNew($user, string $text, array $extraParams = []) : Response
     {
-        $this->init();
         $path = 'direct_messages/events/new';
 
         $len = iconv_strlen($text, 'UTF-8');
@@ -549,13 +615,14 @@ class Twitter
             ];
         }
 
-        return new Response($this->post($path, $params));
+        return $this->post($path, $params);
     }
 
     /**
-     * Retrieve list of direct messages sent by current user
+     * Retrieve list of direct messages sent by current user.
      *
-     * $options may include one or more of the following keys
+     * $options may include one or more of the following keys:
+     *
      * - count: return page X of results
      * - page: return starting at page
      * - since_id: return statuses only greater than the one specified
@@ -565,11 +632,9 @@ class Twitter
      * @param  array $options
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function directMessagesSent(array $options = [])
+    public function directMessagesSent(array $options = []) : Response
     {
-        $this->init();
         $path   = 'direct_messages/sent';
         $params = [];
         foreach ($options as $key => $value) {
@@ -593,48 +658,42 @@ class Twitter
                     break;
             }
         }
-        $response = $this->get($path, $params);
-        return new Response($response);
+        return $this->get($path, $params);
     }
 
     /**
-     * Mark a status as a favorite
+     * Mark a status as a favorite.
      *
-     * @param  int $id Status ID you want to mark as a favorite
+     * @param int|string $id Status ID you want to mark as a favorite
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function favoritesCreate($id)
+    public function favoritesCreate($id) : Response
     {
-        $this->init();
-        $path     = 'favorites/create';
-        $params   = ['id' => $this->validInteger($id)];
-        $response = $this->post($path, $params);
-        return new Response($response);
+        $path   = 'favorites/create';
+        $params = ['id' => $this->validInteger($id)];
+        return $this->post($path, $params);
     }
 
     /**
-     * Remove a favorite
+     * Remove a favorite.
      *
-     * @param  int $id Status ID you want to de-list as a favorite
+     * @param int|string $id Status ID you want to de-list as a favorite
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function favoritesDestroy($id)
+    public function favoritesDestroy($id) : Response
     {
-        $this->init();
-        $path     = 'favorites/destroy';
-        $params   = ['id' => $this->validInteger($id)];
-        $response = $this->post($path, $params);
-        return new Response($response);
+        $path   = 'favorites/destroy';
+        $params = ['id' => $this->validInteger($id)];
+        return $this->post($path, $params);
     }
 
     /**
-     * Fetch favorites
+     * Fetch favorites.
      *
      * $options may contain one or more of the following:
+     *
      * - user_id: Id of a user for whom to fetch favorites
      * - screen_name: Screen name of a user for whom to fetch favorites
      * - count: number of tweets to attempt to retrieve, up to 200
@@ -642,14 +701,11 @@ class Twitter
      * - max_id: return results with an ID less than (older than) or equal to the specified ID
      * - include_entities: when set to false, entities member will be omitted
      *
-     * @param  array $params
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function favoritesList(array $options = [])
+    public function favoritesList(array $options = []) : Response
     {
-        $this->init();
         $path = 'favorites/list';
         $params = [];
         foreach ($options as $key => $value) {
@@ -676,22 +732,61 @@ class Twitter
                     break;
             }
         }
-        $response = $this->get($path, $params);
-        return new Response($response);
+        return $this->get($path, $params);
     }
 
     /**
-     * Create friendship
+     * Get a list of up to 5000 follower IDs.
      *
-     * @param  int|string $id User ID or name of new friend
-     * @param  array $params Additional parameters to pass
+     * Get a list of up to 5000 follower ids for the logged in account or for the
+     * screen name you pass in. Returns the next cursor if there are more to be
+     * returned.
+     *
+     * @param  int|string $id
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function friendshipsCreate($id, array $params = [])
+    public function followersIds($id, array $params = []) : Response
     {
-        $this->init();
+        $path = 'followers/ids';
+        $params = $this->createUserParameter($id, $params);
+        return $this->get($path, $params);
+    }
+
+    /**
+     * Returns a list of IDs of the current logged in user's friends or the
+     * friends of the screen name passed in as
+     * part of the parameters array.
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param int|string $id
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     */
+    public function friendsIds($id, array $params = []) : Response
+    {
+        $path = 'friends/ids';
+        $params = $this->createUserParameter($id, $params);
+        return $this->get($path, $params);
+    }
+
+    /**
+     * Create friendship.
+     *
+     * $params are additional parameters to pass to the API, and  may include
+     * any or all of the following:
+     *
+     * - user_id
+     * - screen_name
+     * - follow
+     *
+     * @param int|string $id User ID or name of new friend
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     */
+    public function friendshipsCreate($id, array $params = []) : Response
+    {
         $path    = 'friendships/create';
         $params  = $this->createUserParameter($id, $params);
         $allowed = [
@@ -700,31 +795,77 @@ class Twitter
             'follow'      => null,
         ];
         $params = array_intersect_key($params, $allowed);
-        $response = $this->post($path, $params);
-        return new Response($response);
+        return $this->post($path, $params);
     }
 
     /**
-     * Destroy friendship
+     * Get a list of the friends that the logged in user has.
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param int|string $id
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     */
+    public function friendshipsLookup($id, array $params = []) : Response
+    {
+        $path = 'friendships/lookup';
+        $params = $this->createUserParameter($id, $params);
+        return $this->get($path, $params);
+    }
+
+    /**
+     * Destroy friendship.
      *
      * @param  int|string $id User ID or name of friend to remove
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function friendshipsDestroy($id)
+    public function friendshipsDestroy($id) : Response
     {
-        $this->init();
-        $path     = 'friendships/destroy';
-        $params   = $this->createUserParameter($id, []);
-        $response = $this->post($path, $params);
-        return new Response($response);
+        $path   = 'friendships/destroy';
+        $params = $this->createUserParameter($id, []);
+        return $this->post($path, $params);
     }
 
     /**
-     * Search tweets
+     * Get a list of the lists that the logged in user is a member of.
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param int|string $id
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     */
+    public function listsMemberships($id, array $params = []) : Response
+    {
+        $path = 'lists/memberships';
+        $params = $this->createUserParameter($id, $params);
+        return $this->get($path, $params);
+    }
+
+    /**
+     * Returns the subscribers of the specified list. Private list subscribers
+     * will only be shown if the authenticated user owns the specified list.
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * @param int|string $id
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     */
+    public function listsSubscribers($id, array $params = []) : Response
+    {
+        $path = 'lists/subscribers';
+        $params = $this->createUserParameter($id, $params);
+        return $this->get($path, $params);
+    }
+
+    /**
+     * Search tweets.
      *
      * $options may include any of the following:
+     *
      * - geocode: a string of the form "latitude, longitude, radius"
      * - lang: restrict tweets to the two-letter language code
      * - locale: query is in the given two-letter language code
@@ -735,15 +876,11 @@ class Twitter
      * - max_id: return results with an ID less than (older than) the given ID
      * - include_entities: whether or not to include embedded entities
      *
-     * @param  string $query
-     * @param  array $options
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function searchTweets($query, array $options = [])
+    public function searchTweets(string $query, array $options = []) : Response
     {
-        $this->init();
         $path = 'search/tweets';
 
         $len = iconv_strlen($query, 'UTF-8');
@@ -828,30 +965,27 @@ class Twitter
                     break;
             }
         }
-        $response = $this->get($path, $params);
-        return new Response($response);
+        return $this->get($path, $params);
     }
 
     /**
-     * Destroy a status message
+     * Destroy a status message.
      *
-     * @param  int $id ID of status to destroy
+     * @param int|string $id ID of status to destroy
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function statusesDestroy($id)
+    public function statusesDestroy($id) : Response
     {
-        $this->init();
         $path = 'statuses/destroy/' . $this->validInteger($id);
-        $response = $this->post($path);
-        return new Response($response);
+        return $this->post($path);
     }
 
     /**
-     * Friend Timeline Status
+     * Home Timeline Status.
      *
-     * $options may include one or more of the following keys
+     * $options may include one or more of the following keys:
+     *
      * - count: number of tweets to attempt to retrieve, up to 200
      * - since_id: return results only after the specified tweet id
      * - max_id: return results with an ID less than (older than) or equal to the specified ID
@@ -860,14 +994,11 @@ class Twitter
      * - include_entities: when set to false, entities member will be omitted
      * - exclude_replies: when set to true, will strip replies appearing in the timeline
      *
-     * @param  array $params
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function statusesHomeTimeline(array $options = [])
+    public function statusesHomeTimeline(array $options = []) : Response
     {
-        $this->init();
         $path = 'statuses/home_timeline';
         $params = [];
         foreach ($options as $key => $value) {
@@ -902,14 +1033,14 @@ class Twitter
                     break;
             }
         }
-        $response = $this->get($path, $params);
-        return new Response($response);
+        return $this->get($path, $params);
     }
 
     /**
-     * Get status replies
+     * Get metions.
      *
-     * $options may include one or more of the following keys
+     * $options may include one or more of the following keys:
+     *
      * - count: number of tweets to attempt to retrieve, up to 200
      * - since_id: return results only after the specified tweet id
      * - max_id: return results with an ID less than (older than) or equal to the specified ID
@@ -920,11 +1051,9 @@ class Twitter
      * @param  array $options
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function statusesMentionsTimeline(array $options = [])
+    public function statusesMentionsTimeline(array $options = []) : Response
     {
-        $this->init();
         $path   = 'statuses/mentions_timeline';
         $params = [];
         foreach ($options as $key => $value) {
@@ -956,37 +1085,42 @@ class Twitter
                     break;
             }
         }
-        $response = $this->get($path, $params);
-        return new Response($response);
+        return $this->get($path, $params);
     }
 
     /**
-     * Public Timeline status
+     * Random sampling of public statuses.
+     *
+     * Note: this method is not in the current Twitter API documentation, and
+     * may not work currently.
      *
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function statusesSample()
+    public function statusesSample() : Response
     {
-        $this->init();
         $path = 'statuses/sample';
-        $response = $this->get($path);
-        return new Response($response);
+        return $this->get($path);
     }
 
     /**
-     * Show a single status
+     * Show a single status.
      *
-     * @param  int $id Id of status to show
-     * @param  array $options Possible list of query options
+     * $options is an array of additional data to pass to the API in order to
+     * detail how to return results; it may include any or all of the following
+     * options:
+     *
+     * - tweet_mode: currently, only allows "extended", to provide maximum tweet detail
+     * - include_entities: whether or not to return media entities
+     * - trim_user: whether or not to return user data with each tweet
+     * - include_my_retweet: whether or not to return statuses that are your own retweets
+     *
+     * @param  int|string $id Id of status to show
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function statusesShow($id, array $options = [])
+    public function statusesShow($id, array $options = []) : Response
     {
-        $this->init();
         $path = 'statuses/show/' . $this->validInteger($id);
         $params = [];
         foreach ($options as $key => $value) {
@@ -1008,25 +1142,26 @@ class Twitter
                     break;
             }
         }
-        $response = $this->get($path, $params);
-        return new Response($response);
+        return $this->get($path, $params);
     }
 
     /**
-     * Update user's current status
+     * Update user's current status.
      *
-     * @todo   Support additional parameters supported by statuses/update endpoint
+     * $extraAttributes currently supports the following options:
+     *
+     * - media_ids: an array of media identifiers as returned by uploading
+     *   media via the Twitter API, and which should be attached to the tweet.
+     *
      * @param  string $status
-     * @param  null|int $inReplyToStatusId
+     * @param  null|int|string $inReplyToStatusId
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\OutOfRangeException if message is too long
      * @throws Exception\InvalidArgumentException if message is empty
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function statusesUpdate($status, $inReplyToStatusId = null, $extraAttributes = [])
+    public function statusesUpdate(string $status, $inReplyToStatusId = null, $extraAttributes = []) : Response
     {
-        $this->init();
         $path = 'statuses/update';
         $len = iconv_strlen(htmlspecialchars($status, ENT_QUOTES, 'UTF-8'), 'UTF-8');
         if ($len > self::STATUS_MAX_CHARACTERS) {
@@ -1054,14 +1189,14 @@ class Twitter
         if ($inReplyToStatusId) {
             $params['in_reply_to_status_id'] = $inReplyToStatusId;
         }
-        $response = $this->post($path, $params);
-        return new Response($response);
+        return $this->post($path, $params);
     }
 
     /**
-     * User Timeline status
+     * User Timeline.
      *
      * $options may include one or more of the following keys
+     *
      * - user_id: Id of a user for whom to fetch favorites
      * - screen_name: Screen name of a user for whom to fetch favorites
      * - count: number of tweets to attempt to retrieve, up to 200
@@ -1074,11 +1209,9 @@ class Twitter
      *
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function statusesUserTimeline(array $options = [])
+    public function statusesUserTimeline(array $options = []) : Response
     {
-        $this->init();
         $path = 'statuses/user_timeline';
         $params = [];
         foreach ($options as $key => $value) {
@@ -1119,27 +1252,40 @@ class Twitter
                     break;
             }
         }
-        $response = $this->get($path, $params);
-        return new Response($response);
+        return $this->get($path, $params);
     }
 
     /**
-     * Search users
+     * Pass in one or more twitter IDs and it will return a list of user objects.
+     *
+     * This is the most effecient way of gathering bulk user data.
+     *
+     * @param int|string $id
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     */
+    public function usersLookup($id, array $params = []) : Response
+    {
+        $path = 'users/lookup';
+        // $params = $this->createUserParameter($id, $params);
+        $params['user_id'] = $id;
+        return $this->post($path, $params);
+    }
+
+    /**
+     * Search users.
      *
      * $options may include any of the following:
+     *
      * - page: the page of results to retrieve
      * - count: the number of users to retrieve per page; max is 20
      * - include_entities: if set to boolean true, include embedded entities
      *
-     * @param  string $query
-     * @param  array $options
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function usersSearch($query, array $options = [])
+    public function usersSearch(string $query, array $options = []) : Response
     {
-        $this->init();
         $path = 'users/search';
 
         $len = iconv_strlen($query, 'UTF-8');
@@ -1171,37 +1317,32 @@ class Twitter
                     break;
             }
         }
-        $response = $this->get($path, $params);
-        return new Response($response);
+        return $this->get($path, $params);
     }
 
 
     /**
-     * Show extended information on a user
+     * Show extended information on a user.
      *
      * @param  int|string $id User ID or name
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
-     * @return Response
      */
-    public function usersShow($id)
+    public function usersShow($id) : Response
     {
-        $this->init();
         $path     = 'users/show';
         $params   = $this->createUserParameter($id, []);
-        $response = $this->get($path, $params);
-        return new Response($response);
+        return $this->get($path, $params);
     }
 
     /**
      * Initialize HTTP authentication
      *
-     * @return void
      * @throws Exception\DomainException if unauthorised
      */
-    protected function init()
+    public function init(string $path, Http\Client $client) : void
     {
-        if (! $this->isAuthorised() && $this->getUsername() !== null) {
+        if (! $this->isAuthorised($client) && $this->getUsername() !== null) {
             throw new Exception\DomainException(
                 'Twitter session is unauthorised. You need to initialize '
                 . __CLASS__ . ' with an OAuth Access Token or use '
@@ -1209,99 +1350,53 @@ class Twitter
                 . 'attempting any API actions that require authorisation'
             );
         }
-        $client = $this->getHttpClient();
+
+        // Reset on every request to prevent parameters leaking between them.
         $client->resetParameters();
+        $client->setUri(static::API_BASE_URI . $path . '.json');
+
         if (null === $this->cookieJar) {
             $client->clearCookies();
             $this->cookieJar = $client->getCookies();
-        } else {
-            $client->setCookies($this->cookieJar);
+            return;
         }
+
+        $client->setCookies($this->cookieJar);
     }
 
     /**
-     * Protected function to validate that the integer is valid or return a 0
+     * Protected function to validate a status or user identifier.
      *
-     * @param  $int
-     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
-     * @return integer
+     * If the value consists of solely digits, it is valid, and will be
+     * returned verbatim. Otherwise, a zero is returned.
+     *
+     * @param string|int $int
+     * @return string|int
      */
     protected function validInteger($int)
     {
-        if (preg_match("/^(\d+)$/", $int)) {
+        if (preg_match('/^(\d+)$/', $int)) {
             return $int;
         }
         return 0;
     }
 
     /**
-     * Validate a screen name using Twitter rules
+     * Validate a screen name using Twitter rules.
      *
-     * @param string $name
-     * @return string
      * @throws Exception\InvalidArgumentException
      */
-    protected function validateScreenName($name)
+    protected function validateScreenName(string $name) : string
     {
         if (! preg_match('/^[a-zA-Z0-9_]{0,20}$/', $name)) {
             throw new Exception\InvalidArgumentException(
-                'Screen name, "' . $name
+                'Screen name, "'
+                . $name
                 . '" should only contain alphanumeric characters and'
                 . ' underscores, and not exceed 15 characters.'
             );
         }
         return $name;
-    }
-
-    /**
-     * Call a remote REST web service URI
-     *
-     * @param  string $path The path to append to the URI
-     * @param  Http\Client $client
-     * @throws Client\Exception\UnexpectedValueException
-     * @return void
-     */
-    protected function prepare($path, Http\Client $client)
-    {
-        $client->setUri(static::API_BASE_URI . $path . '.json');
-
-        /**
-         * Do this each time to ensure oauth calls do not inject new params
-         */
-        $client->resetParameters();
-    }
-
-    /**
-     * Performs an HTTP GET request to the $path.
-     *
-     * @param string $path
-     * @param array  $query Array of GET parameters
-     * @throws Http\Client\Exception\ExceptionInterface
-     * @return Http\Response
-     */
-    protected function get($path, array $query = [])
-    {
-        $client = $this->getHttpClient();
-        $this->prepare($path, $client);
-        $client->setParameterGet($query);
-        $client->setMethod(Http\Request::METHOD_GET);
-        $response = $client->send();
-        return $response;
-    }
-
-    /**
-     * Performs an HTTP POST request to $path.
-     *
-     * @param string $path
-     * @param mixed $data Raw data to send
-     * @throws Http\Client\Exception\ExceptionInterface
-     * @return Http\Response
-     */
-    protected function post($path, $data = null)
-    {
-        $client = $this->getHttpClient();
-        $this->prepare($path, $client);
-        return $this->performPost(Http\Request::METHOD_POST, $data, $client);
     }
 
     /**
@@ -1311,11 +1406,9 @@ class Twitter
      * client. String data is pushed in as raw POST data; array or object data
      * is JSON-encoded before being passed to the request body.
      *
-     * @param mixed $method
-     * @param mixed $data
-     * @return Http\Response
+     * @param null|string|array|\stdClass $data Raw data to send
      */
-    protected function performPost($method, $data, Http\Client $client)
+    protected function performPost(string $method, $data, Http\Client $client) : Http\Response
     {
         if (is_array($data) || is_object($data)) {
             $data = json_encode($data, $this->jsonFlags);
@@ -1333,16 +1426,17 @@ class Twitter
     }
 
     /**
-     * Create a parameter representing the user
+     * Create a parameter representing the user.
      *
      * Determines if $id is an integer, and, if so, sets the "user_id" parameter.
      * If not, assumes the $id is the "screen_name".
      *
-     * @param  int|string $id
-     * @param  array $params
-     * @return array
+     * Returns the $params with the appropriate key added.
+     *
+     * @param int|string $id
+     * @param array $params
      */
-    protected function createUserParameter($id, array $params)
+    protected function createUserParameter($id, array $params) : array
     {
         if ($this->validInteger($id)) {
             $params['user_id'] = $id;
@@ -1351,120 +1445,5 @@ class Twitter
 
         $params['screen_name'] = $this->validateScreenName($id);
         return $params;
-    }
-
-    /**
-     * Get a list of up to 5000 follower IDs
-     *
-     * Get a list of up to 5,000 follower ids for the logged in account or for the
-     * screen name you pass in. Returns the next cursor if there are more to be
-     * returned.
-     *
-     * @param  int|string $id
-     * @param  array $params
-     * @return Response
-     */
-    protected function followersIds($id, array $params = [])
-    {
-        $this->init();
-        $path = 'followers/ids';
-        $params = $this->createUserParameter($id, $params);
-        $response = $this->get($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Get a list of the lists that the logged in user is a member of
-     *
-     * Returns the next cursor if there are more to be returned.
-     *
-     * @param  int|string $id
-     * @param  array $params
-     * @return Response
-     */
-    protected function listsMemberships($id, array $params = [])
-    {
-        $this->init();
-        $path = 'lists/memberships';
-        $params = $this->createUserParameter($id, $params);
-        $response = $this->get($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Get a list of the friends that the logged in user has
-     *
-     * Returns the next cursor if there are more to be returned.
-     *
-     * @param  int|string $id
-     * @param  array $params
-     * @return Response
-     */
-    protected function friendshipsLookup($id, array $params = [])
-    {
-        $this->init();
-        $path = 'friendships/lookup';
-        $params = $this->createUserParameter($id, $params);
-        $response = $this->get($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Pass in one or more twitter IDs and it will return a list of user objects.
-     *
-     * This is the most effecient way of gatehring bulk user data.
-     *
-     * @param  int|string $id
-     * @param  array $params
-     * @return Response
-     */
-    protected function usersLookup($id, array $params = [])
-    {
-        $this->init();
-        $path = 'users/lookup';
-        // $params = $this->createUserParameter($id, $params);
-        $params['user_id'] = $id;
-        $response = $this->post($path, $params);
-        return new Response($response);
-    }
-
-    /**
-     * Returns a list of IDs of the current logged in user's friends or the
-     * friends of the screen name passed in as
-     * part of the parameters array.
-     *
-     * Returns the next cursor if there are more to be returned.
-     *
-     * @param  int|string $id
-     * @param  array $params
-     * @return Response
-     */
-    protected function friendsIds($id, array $params = [])
-    {
-        $this->init();
-        $path = 'friends/ids';
-        $params = $this->createUserParameter($id, $params);
-        $response = $this->get($path, $params);
-        return new Response($response);
-    }
-
-
-    /**
-     * Returns the subscribers of the specified list. Private list subscribers
-     * will only be shown if the authenticated user owns the specified list.
-     *
-     * Returns the next cursor if there are more to be returned.
-     *
-     * @param  int|string $id
-     * @param  array $params
-     * @return Response
-     */
-    protected function listsSubscribers($id, array $params = [])
-    {
-        $this->init();
-        $path = 'lists/subscribers';
-        $params = $this->createUserParameter($id, $params);
-        $response = $this->get($path, $params);
-        return new Response($response);
     }
 }
