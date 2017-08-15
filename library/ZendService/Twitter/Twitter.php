@@ -991,27 +991,18 @@ class Twitter
         $params = [];
         foreach ($options as $key => $value) {
             switch (strtolower($key)) {
+                case 'tweet_mode':
+                    unset($params[$key]);
+                    $params['tweet_mode'] = 'extended';
+                    break;
                 case 'include_entities':
-                    $params['include_entities'] = (bool) $value;
+                    $params[strtolower($key)] = (bool) $value;
                     break;
                 case 'trim_user':
-                    if (in_array($value, [true, 'true', 't', 1, '1'])) {
-                        $value = true;
-                    } else {
-                        $value = false;
-                    }
-                    $params['trim_user'] = $value;
+                    $params[strtolower($key)] = (bool) $value;
                     break;
                 case 'include_my_retweet':
-                    if (in_array($value, [true, 'true', 't', 1, '1'])) {
-                        $value = true;
-                    } else {
-                        $value = false;
-                    }
-                    $params['include_my_retweet'] = $value;
-                    break;
-                case 'tweet_mode':
-                    $params['tweet_mode'] = 'extended';
+                    $params[strtolower($key)] = (bool) $value;
                     break;
                 default:
                     break;
