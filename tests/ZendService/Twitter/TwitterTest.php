@@ -841,4 +841,165 @@ class TwitterTest extends TestCase
         $this->expectExceptionMessage('no more than 10000 char');
         $twitter->directMessagesNew('twitter', $text);
     }
+
+    public function testDirectMessageUsesEventsApi()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'direct_messages/events/new.json',
+            Http\Request::METHOD_POST,
+            'direct_messages.events.new.json',
+            [
+                'type' => 'message_create',
+                'message_create' => [
+                    'target' => [
+                        'recipient_id' => '1',
+                    ],
+                    'message_data' => [
+                        'text' => 'Message',
+                    ],
+                ],
+            ]
+        ));
+        $response = $twitter->directMessages->new('1', 'Message');
+        $this->assertInstanceOf(TwitterResponse::class, $response);
+    }
+
+    public function testDirectMessageUsingScreenNameResultsInUserLookup()
+    {
+        $twitter = new Twitter\Twitter;
+        $client = $this->prophesize(OAuthClient::class);
+        $client->resetParameters()->will([$client, 'reveal']);
+        $client->setHeaders(['Accept-Charset' => 'ISO-8859-1,utf-8'])->will([$client, 'reveal']);
+        $client->clearCookies()->will([$client, 'reveal']);
+        $client->getCookies()->willReturn([]);
+        $client->setCookies([])->willReturn([]);
+
+        $client->setUri('https://api.twitter.com/1.1/users/show.json')->shouldBeCalled();
+        $client->setMethod('GET')->will([$client, 'reveal']);
+        $client->setParameterGet(['screen_name' => 'Zend'])->shouldBeCalled();
+
+        $userResponse = $this->prophesize(Http\Response::class);
+        $userResponse->getBody()->willReturn('{"id_str":"1"}');
+        $userResponse->getHeaders()->willReturn(null);
+        $userResponse->isSuccess()->willReturn(true);
+
+        $headers = $this->prophesize(Http\Headers::class);
+        $headers->addHeaderLine('Content-Type', 'application/json')->shouldBeCalled();
+        $request = $this->prophesize(Http\Request::class);
+        $request->getHeaders()->will([$headers, 'reveal']);
+        $client->getRequest()->will([$request, 'reveal']);
+
+        $data = [
+            'type' => 'message_create',
+            'message_create' => [
+                'target' => [
+                    'recipient_id' => '1',
+                ],
+                'message_data' => [
+                    'text' => 'Message',
+                ],
+            ],
+        ];
+        $client->setUri('https://api.twitter.com/1.1/direct_messages/events/new.json')->shouldBeCalled();
+        $client->setMethod('POST')->will([$client, 'reveal']);
+        $client->setRawBody(json_encode($data, $this->jsonFlags))->shouldBeCalled();
+
+        $dmResponse = $this->prophesize(Http\Response::class);
+        $dmResponse->getBody()->willReturn(file_get_contents(__DIR__ . '/_files/direct_messages.events.new.json'));
+        $dmResponse->getHeaders()->willReturn(null);
+
+        $client->send()->willReturn(
+            $userResponse->reveal(),
+            $dmResponse->reveal()
+        );
+
+        $twitter->setHttpClient($client->reveal());
+        $response = $twitter->directMessages->new('Zend', 'Message');
+        $this->assertInstanceOf(TwitterResponse::class, $response);
+    }
+
+    public function testDirectMessageWithInvalidScreenNameResultsInException()
+    {
+        $twitter = new Twitter\Twitter;
+        $client = $this->prophesize(OAuthClient::class);
+        $client->resetParameters()->will([$client, 'reveal']);
+        $client->setHeaders(['Accept-Charset' => 'ISO-8859-1,utf-8'])->will([$client, 'reveal']);
+        $client->clearCookies()->will([$client, 'reveal']);
+        $client->getCookies()->willReturn([]);
+        $client->setCookies([])->willReturn([]);
+
+        $client->setUri('https://api.twitter.com/1.1/users/show.json')->shouldBeCalled();
+        $client->setMethod('GET')->will([$client, 'reveal']);
+        $client->setParameterGet(['screen_name' => 'Zend'])->shouldBeCalled();
+
+        $userResponse = $this->prophesize(Http\Response::class);
+        $userResponse->getBody()->willReturn('{"id_str":"1"}');
+        $userResponse->getHeaders()->willReturn(null);
+        $userResponse->isSuccess()->willReturn(false);
+
+        $client->getRequest()->shouldNotBeCalled();
+
+        $client->setUri('https://api.twitter.com/1.1/direct_messages/events/new.json')->shouldNotBeCalled();
+        $client->setMethod('POST')->shouldNotBeCalled();
+
+        $client->send()->willReturn($userResponse->reveal());
+
+        $twitter->setHttpClient($client->reveal());
+        $this->expectException(Twitter\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid user');
+        $response = $twitter->directMessages->new('Zend', 'Message');
+    }
+
+    public function testDirectMessageWithUserIdentifierSkipsUserLookup()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'direct_messages/events/new.json',
+            Http\Request::METHOD_POST,
+            'direct_messages.events.new.json',
+            [
+                'type' => 'message_create',
+                'message_create' => [
+                    'target' => [
+                        'recipient_id' => '1',
+                    ],
+                    'message_data' => [
+                        'text' => 'Message',
+                    ],
+                ],
+            ]
+        ));
+        $response = $twitter->directMessages->new('1', 'Message');
+        $this->assertInstanceOf(TwitterResponse::class, $response);
+    }
+
+    public function testDirectMessageAllowsProvidingMedia()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'direct_messages/events/new.json',
+            Http\Request::METHOD_POST,
+            'direct_messages.events.new.media.json',
+            [
+                'type' => 'message_create',
+                'message_create' => [
+                    'target' => [
+                        'recipient_id' => '1',
+                    ],
+                    'message_data' => [
+                        'text' => 'Message',
+                        'attachment' => [
+                            'type' => 'media',
+                            'media' => [
+                                'id' => 'XXXX',
+                            ],
+                        ],
+                    ],
+                ],
+            ]
+        ));
+        $response = $twitter->directMessages->new('1', 'Message', ['media_id' => 'XXXX']);
+        $this->assertInstanceOf(TwitterResponse::class, $response);
+    }
 }

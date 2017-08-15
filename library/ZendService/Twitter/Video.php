@@ -14,8 +14,12 @@ namespace ZendService\Twitter;
  */
 class Video extends Media
 {
-    public function __construct(string $imageUrl, string $mediaType = 'video/mp4')
-    {
-        parent::__construct($imageUrl, $mediaType);
+    public function __construct(
+        string $imageUrl,
+        string $mediaType = 'video/mp4',
+        bool $forDirectMessage = false,
+        bool $shared = false
+    ) {
+        parent::__construct($imageUrl, $mediaType, $forDirectMessage, $shared);
     }
 }
