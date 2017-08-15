@@ -3,13 +3,24 @@
     "description": "OOP wrapper for the Twitter web service",
     "type": "library",
     "keywords": [
-        "zf2",
-        "twitter"
+        "twitter",
+        "zendframework",
+        "zf"
     ],
     "license": "BSD-3-Clause",
-    "autoload": {
-        "psr-0": {
-            "ZendService\\Twitter\\": "library/"
+    "support": {
+        "issues": "https://github.com/zendframework/ZendService_Twitter/issues",
+        "source": "https://github.com/zendframework/ZendService_Twitter",
+        "slack": "https://zendframework-slack.herokuapp.com",
+        "forum": "https://discourse.zendframework.com/c/questions/components"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.x-dev",
+            "dev-develop": "3.0.x-dev"
         }
     },
     "require": {
@@ -22,13 +33,17 @@
         "zendframework/zendoauth": "^2.0.3"
     },
     "require-dev": {
-        "squizlabs/php_codesniffer": "^2.6.2",
-        "phpunit/phpunit": "^6.0.8"
+        "phpunit/phpunit": "^6.0.8",
+        "zendframework/zend-coding-standard": "^1.0"
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.0.x-dev",
-            "dev-develop": "2.1.x-dev"
+    "autoload": {
+        "psr-4": {
+            "ZendService\\Twitter\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ZendServiceTest\\Twitter\\": "test/"
         }
     },
     "scripts": {
