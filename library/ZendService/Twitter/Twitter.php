@@ -479,9 +479,15 @@ class Twitter
         $path = 'direct_messages/new';
 
         $len = iconv_strlen($text, 'UTF-8');
-        if (0 == $len) {
+        if (0 === $len) {
             throw new Exception\InvalidArgumentException(
                 'Direct message must contain at least one character'
+            );
+        }
+
+        if (10000 < $len) {
+            throw new Exception\InvalidArgumentException(
+                'Direct message must be no more than 10000 characters'
             );
         }
 

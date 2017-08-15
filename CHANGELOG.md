@@ -56,8 +56,9 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Changed
 
-- [#34](https://github.com/zendframework/ZendService_Twitter/pull/34) updates
-  direct message support to remove the 140 character limit.
+- [#40](https://github.com/zendframework/ZendService_Twitter/pull/40) updates
+  direct message support to set the character limit to 10k, as documented
+  currently for the Twitter API.
 
 - [#34](https://github.com/zendframework/ZendService_Twitter/pull/34) updates
   the `Twitter` class to return a `ZendService\Twitter\Response` instance

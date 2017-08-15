@@ -14,9 +14,6 @@ namespace ZendService\Twitter;
  */
 class Image extends Media
 {
-    /**
-     * @param $imageUrl
-     */
     public function __construct(string $imageUrl, string $mediaType = 'image/jpeg')
     {
         parent::__construct($imageUrl, $mediaType);
