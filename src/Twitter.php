@@ -829,6 +829,81 @@ class Twitter
     }
 
     /**
+     * Get a list of the users belonging to a given list
+     *
+     * Returns the next cursor if there are more to be returned.
+     *
+     * If the $listIdOrSlug represents a list's slug, then one of the following
+     * parameters MUST be present:
+     *
+     * - `owner_id`, a valid integer identifier of a Twitter user
+     * - `owner_screen_name`, a valid string identifier of a Twitter user
+     *
+     * If either are missing, or malformed, an exception is raised.
+     *
+     * @param int|string $listIdOrSlug
+     * @throws Exception\InvalidArgumentException if $listIdOrSlug is a string
+     *     slug and neither the `owner_id` nor the `owner_screen_name` are
+     *     provided in `$params`.
+     * @throws Exception\InvalidArgumentException if $listIdOrSlug is a string
+     *     slug and the `owner_id` provided is not a valid integer.
+     * @throws Exception\InvalidArgumentException if $listIdOrSlug is a string
+     *     slug and the `owner_screen_name` provided is not valid.
+     * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
+     * @throws Exception\DomainException if unable to decode JSON payload
+     */
+    public function listsMembers($listIdOrSlug, array $params = []) : Response
+    {
+        $path = 'lists/members';
+
+        if (0 !== $this->validInteger($listIdOrSlug)) {
+            $params['list_id'] = $listIdOrSlug;
+            return $this->get($path, $params);
+        }
+
+        $params['slug'] = $listIdOrSlug;
+
+        if (! array_key_exists('owner_id', $params) && ! array_key_exists('owner_screen_name', $params)) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                '%s was provided a list slug, but is missing owner info; '
+                . 'please provide one of either the "owner_id" or '
+                . '"owner_screen_name" parameters when calling the method',
+                __METHOD__
+            ));
+        }
+
+        if (array_key_exists('owner_id', $params)) {
+            if (0 === $this->validInteger($params['owner_id'])) {
+                throw new Exception\InvalidArgumentException(sprintf(
+                    '%s was provided a list slug, but an invalid owner_id parameter; '
+                    . 'must be an integer',
+                    __METHOD__
+                ));
+            }
+            return $this->get($path, $params);
+        }
+
+        if (! is_string($params['owner_screen_name'])) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                '%s was provided a list slug, but an invalid owner_screen_name parameter; '
+                . 'must be an integer',
+                __METHOD__
+            ));
+        }
+
+        try {
+            $this->validateScreenName($params['owner_screen_name']);
+        } catch (Exception\InvalidArgumentException $e) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                '%s was provided a list slug, but an invalid owner_screen_name parameter; '
+                . 'must be an integer',
+                __METHOD__
+            ), 0, $e);
+        }
+        return $this->get($path, $params);
+    }
+
+    /**
      * Get a list of the lists that the logged in user is a member of.
      *
      * Returns the next cursor if there are more to be returned.
@@ -1375,7 +1450,10 @@ class Twitter
      */
     protected function validInteger($int)
     {
-        if (preg_match('/^(\d+)$/', $int)) {
+        if (is_int($int)) {
+            return $int;
+        }
+        if (is_string($int) && preg_match('/^(\d+)$/', $int)) {
             return $int;
         }
         return 0;
@@ -1388,7 +1466,7 @@ class Twitter
      */
     protected function validateScreenName(string $name) : string
     {
-        if (! preg_match('/^[a-zA-Z0-9_]{0,20}$/', $name)) {
+        if (! is_string($name) || ! preg_match('/^[a-zA-Z0-9_]{1,15}$/', $name)) {
             throw new Exception\InvalidArgumentException(
                 'Screen name, "'
                 . $name

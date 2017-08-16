@@ -10,6 +10,7 @@ namespace ZendTest\Twitter;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use ReflectionProperty;
+use stdClass;
 use Zend\Http;
 use ZendOAuth\Client as OAuthClient;
 use ZendOAuth\Consumer as OAuthConsumer;
@@ -1024,5 +1025,109 @@ class TwitterTest extends TestCase
         ]);
 
         $this->assertInstanceOf(TwitterResponse::class, $finalResponse);
+    }
+
+    public function testListsMembersCanBeCalledWithListIdentifierOnly()
+    {
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'lists/members.json',
+            Http\Request::METHOD_GET,
+            'lists.members.json',
+            [
+                'list_id' => 12345,
+            ]
+        ));
+
+        $finalResponse = $twitter->lists->members(12345);
+        $this->assertInstanceOf(TwitterResponse::class, $finalResponse);
+    }
+
+    public function testListsMembersCanBeCalledWithListSlugAndIntegerOwnerId()
+    {
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'lists/members.json',
+            Http\Request::METHOD_GET,
+            'lists.members.json',
+            [
+                'slug'     => 'zendframework',
+                'owner_id' => 12345,
+            ]
+        ));
+
+        $finalResponse = $twitter->lists->members('zendframework', ['owner_id' => 12345]);
+        $this->assertInstanceOf(TwitterResponse::class, $finalResponse);
+    }
+
+    public function testListsMembersCanBeCalledWithListSlugAndStringOwnerScreenName()
+    {
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'lists/members.json',
+            Http\Request::METHOD_GET,
+            'lists.members.json',
+            [
+                'slug'              => 'zendframework',
+                'owner_screen_name' => 'zfdevteam',
+            ]
+        ));
+
+        $finalResponse = $twitter->lists->members('zendframework', ['owner_screen_name' => 'zfdevteam']);
+        $this->assertInstanceOf(TwitterResponse::class, $finalResponse);
+    }
+
+    public function testListsMembersRaisesExceptionIfSlugPassedWithoutOwnerInformation()
+    {
+        $twitter = new Twitter\Twitter();
+        $this->expectException(Twitter\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage('missing owner info');
+        $twitter->lists->members('zendframework');
+    }
+
+    public function invalidIntegerIdentifiers() : array
+    {
+        return [
+            'null'       => [null],
+            'true'       => [true],
+            'false'      => [false],
+            'zero-float' => [0.0],
+            'float'      => [1.1],
+            'string'     => ['not-an-integer'],
+            'array'      => [[1]],
+            'object'     => [new stdClass()],
+        ];
+    }
+
+    /**
+     * @dataProvider invalidIntegerIdentifiers
+     * @param mixed $ownerId
+     */
+    public function testListsMembersRaisesExceptionIfSlugPassedWithInvalidOwnerId($ownerId)
+    {
+        $twitter = new Twitter\Twitter();
+        $this->expectException(Twitter\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage('invalid owner_id');
+        $twitter->lists->members('zendframework', ['owner_id' => $ownerId]);
+    }
+
+    public function invalidStringIdentifiers() : array
+    {
+        return [
+            'empty'         => [''],
+            'too-long'      => [implode('', range('a', 'z'))],
+            'invalid-chars' => ['this-is !inv@lid'],
+        ];
+    }
+
+    /**
+     * @dataProvider invalidStringIdentifiers
+     */
+    public function testListsMembersRaisesExceptionIfSlugPassedWithInvalidOwnerScreenName(string $owner)
+    {
+        $twitter = new Twitter\Twitter();
+        $this->expectException(Twitter\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage('invalid owner_screen_name');
+        $twitter->lists->members('zendframework', ['owner_screen_name' => $owner]);
     }
 }
