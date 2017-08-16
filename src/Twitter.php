@@ -7,6 +7,7 @@
 
 namespace ZendService\Twitter;
 
+use Closure;
 use Traversable;
 use ZendOAuth as OAuth;
 use Zend\Http;
@@ -803,14 +804,21 @@ class Twitter
      *
      * Returns the next cursor if there are more to be returned.
      *
-     * @param int|string $id
+     * $id may be one of any of the following:
+     *
+     * - a single user identifier
+     * - a single screen name
+     * - a list of user identifiers
+     * - a list of screen names
+     *
+     * @param int|string|array $id
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
      */
     public function friendshipsLookup($id, array $params = []) : Response
     {
         $path = 'friendships/lookup';
-        $params = $this->createUserParameter($id, $params);
+        $params = $this->createUserListParameter($id, $params, __METHOD__);
         return $this->get($path, $params);
     }
 
@@ -1335,15 +1343,21 @@ class Twitter
      *
      * This is the most effecient way of gathering bulk user data.
      *
-     * @param int|string $id
+     * $id may be one of any of the following:
+     *
+     * - a single user identifier
+     * - a single screen name
+     * - a list of user identifiers
+     * - a list of screen names
+     *
+     * @param int|string|array $id
      * @throws Http\Client\Exception\ExceptionInterface if HTTP request fails or times out
      * @throws Exception\DomainException if unable to decode JSON payload
      */
     public function usersLookup($id, array $params = []) : Response
     {
         $path = 'users/lookup';
-        // $params = $this->createUserParameter($id, $params);
-        $params['user_id'] = $id;
+        $params = $this->createUserListParameter($id, $params, __METHOD__);
         return $this->post($path, $params);
     }
 
@@ -1446,16 +1460,17 @@ class Twitter
      * returned verbatim. Otherwise, a zero is returned.
      *
      * @param string|int $int
-     * @return string|int
      */
-    protected function validInteger($int)
+    protected function validInteger($int) : int
     {
         if (is_int($int)) {
             return $int;
         }
+
         if (is_string($int) && preg_match('/^(\d+)$/', $int)) {
             return $int;
         }
+
         return 0;
     }
 
@@ -1467,12 +1482,11 @@ class Twitter
     protected function validateScreenName(string $name) : string
     {
         if (! is_string($name) || ! preg_match('/^[a-zA-Z0-9_]{1,15}$/', $name)) {
-            throw new Exception\InvalidArgumentException(
-                'Screen name, "'
-                . $name
-                . '" should only contain alphanumeric characters and'
-                . ' underscores, and not exceed 15 characters.'
-            );
+            throw new Exception\InvalidArgumentException(sprintf(
+                'Screen name, "%s" should only contain alphanumeric characters and'
+                . ' underscores, and not exceed 15 characters.',
+                $name
+            ));
         }
         return $name;
     }
@@ -1513,15 +1527,106 @@ class Twitter
      *
      * @param int|string $id
      * @param array $params
+     * @throws Exception\InvalidArgumentException if the value is neither an integer nor a string
      */
     protected function createUserParameter($id, array $params) : array
     {
-        if ($this->validInteger($id)) {
+        if (! is_string($id) && ! is_int($id)) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                '$id must be an integer or a string, received %s',
+                is_object($id) ? get_class($id) : gettype($id)
+            ));
+        }
+
+        if (0 !== $this->validInteger($id)) {
             $params['user_id'] = $id;
             return $params;
         }
 
+        if (! is_string($id)) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                '$id must be an integer or a string, received %s',
+                gettype($id)
+            ));
+        }
+
         $params['screen_name'] = $this->validateScreenName($id);
+        return $params;
+    }
+
+    /**
+     * Prepares a list of identifiers for use with endpoints accepting lists of users.
+     *
+     * The various `lookup` endpoints allow passing either:
+     *
+     * - a single user identifier
+     * - a single screen name
+     * - a list of user identifiers
+     * - a list of screen names
+     *
+     * This method checks for each of these conditions. For scalar $ids, it
+     * proxies to {@link createUserParameter}. Otherwise, it checks to ensure
+     * that all values are of the same type. For identifiers, it then
+     * concatenates the values and returns them in the `user_id` parameter.
+     * For screen names, it validates them first, before concatenating and
+     * returning them via the `screen_name` parameter.
+     *
+     * @param int|string|array $ids
+     * @throws Exception\InvalidArgumentException for a non-int/string/array $ids value.
+     * @throws Exception\InvalidArgumentException if an array of $ids exceeds 100 items.
+     * @throws Exception\InvalidArgumentException if an array of $ids are not all of the same type.
+     * @throws Exception\InvalidArgumentException if any screen name element is invalid.
+     */
+    protected function createUserListParameter($ids, array $params, string $context) : array
+    {
+        if (! is_array($ids)) {
+            return $this->createUserParameter($ids, $params);
+        }
+
+        if (100 < count($ids)) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                'Lists of identifier(s) or screen name(s) provided for %s; '
+                . 'must contain no more than 100 items. '
+                . 'Received %d',
+                $context,
+                count($ids)
+            ));
+        }
+
+        $detectedType = array_reduce($ids, function ($detectedType, $id) {
+            if (false === $detectedType) {
+                return $detectedType;
+            }
+
+            $idType = 0 !== $this->validInteger($id)
+                ? 'user_id'
+                : 'screen_name';
+
+            if (null === $detectedType) {
+                return $idType;
+            }
+
+            return $detectedType === $idType
+                ? $detectedType
+                : false;
+        }, null);
+
+        if (false === $detectedType) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                'Invalid identifier(s) or screen name(s) provided for %s; '
+                . 'all values must either be identifiers OR screen names. '
+                . 'You cannot provide items of both types.',
+                $context
+            ));
+        }
+
+        if ($detectedType === 'user_id') {
+            $params['user_id'] = implode(',', $ids);
+            return $params;
+        }
+
+        array_walk($ids, Closure::fromCallable([$this, 'validateScreenName']));
+        $params['screen_name'] = implode(',', $ids);
         return $params;
     }
 }
