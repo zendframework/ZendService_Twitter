@@ -1463,7 +1463,7 @@ class Twitter
      */
     protected function validInteger($int) : int
     {
-        if (is_int($int)) {
+        if (is_int($int) && $int > -1) {
             return $int;
         }
 
