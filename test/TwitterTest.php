@@ -1130,4 +1130,99 @@ class TwitterTest extends TestCase
         $this->expectExceptionMessage('invalid owner_screen_name');
         $twitter->lists->members('zendframework', ['owner_screen_name' => $owner]);
     }
+
+    public function userIdentifierProvider() : iterable
+    {
+        yield 'single-user_id' => [111, 'user_id'];
+        yield 'single-screen_name' => ['zfdevteam', 'screen_name'];
+        yield 'multi-user_id' => [range(100, 150), 'user_id'];
+        yield 'multi-screen_name' => [range('a', 'z'), 'screen_name'];
+    }
+
+    /**
+     * @dataProvider userIdentifierProvider
+     * @param mixed $id
+     */
+    public function testUsersLookupAcceptsAllSupportedUserIdentifiers($id, string $paramKey)
+    {
+        $expected = is_array($id)
+            ? $expected = implode(',', $id)
+            : $id;
+
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'users/lookup.json',
+            Http\Request::METHOD_POST,
+            'users.lookup.json',
+            [$paramKey => $expected]
+        ));
+
+        $finalResponse = $twitter->users->lookup($id);
+        $this->assertInstanceOf(TwitterResponse::class, $finalResponse);
+    }
+
+    /**
+     * @dataProvider userIdentifierProvider
+     * @param mixed $id
+     */
+    public function testFriendshipsLookupAcceptsAllSupportedUserIdentifiers($id, string $paramKey)
+    {
+        $expected = is_array($id)
+            ? $expected = implode(',', $id)
+            : $id;
+
+        $twitter = new Twitter\Twitter();
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'friendships/lookup.json',
+            Http\Request::METHOD_GET,
+            'friendships.lookup.json',
+            [$paramKey => $expected]
+        ));
+
+        $finalResponse = $twitter->friendships->lookup($id);
+        $this->assertInstanceOf(TwitterResponse::class, $finalResponse);
+    }
+
+    public function invalidUserIdentifierProvider() : iterable
+    {
+        yield 'null'                      => [null, 'integer or a string'];
+        yield 'true'                      => [true, 'integer or a string'];
+        yield 'false'                     => [false, 'integer or a string'];
+        yield 'zero-float'                => [0.0, 'integer or a string'];
+        yield 'float'                     => [1.1, 'integer or a string'];
+        yield 'empty-string'              => ['', 'alphanumeric'];
+        yield 'malformed-string'          => ['not a valid screen name', 'alphanumeric'];
+        yield 'array-too-many'            => [range(1, 200), 'no more than 100'];
+        yield 'array-type-mismatch'       => [[1, 'screenname'], 'identifiers OR screen names'];
+        yield 'array-invalid-screen-name' => [['not a valid screen name'], 'alphanumeric'];
+        yield 'object'                    => [new stdClass(), 'integer or a string'];
+    }
+
+    /**
+     * @dataProvider invalidUserIdentifierProvider
+     * @param mixed $ids
+     */
+    public function testUsersLookupRaisesExceptionIfInvalidIdentifiersProvided($ids, string $expectedMessage)
+    {
+        $twitter = new Twitter\Twitter();
+
+        $this->expectException(Twitter\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        $twitter->users->lookup($ids);
+    }
+
+    /**
+     * @dataProvider invalidUserIdentifierProvider
+     * @param mixed $ids
+     */
+    public function testFriendshipsLookupRaisesExceptionIfInvalidIdentifiersProvided($ids, string $expectedMessage)
+    {
+        $twitter = new Twitter\Twitter();
+
+        $this->expectException(Twitter\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        $twitter->friendships->lookup($ids);
+    }
 }

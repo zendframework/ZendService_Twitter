@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Taylor Singletary",
+    "screen_name": "episod",
+    "id": 819797,
+    "id_str": "819797",
+    "connections": [
+      "following",
+      "followed_by"
+    ]
+  },
+  {
+    "name": "Twitter API",
+    "screen_name": "twitterapi",
+    "id": 6253282,
+    "id_str": "6253282",
+    "connections": [
+      "following",
+      "followed_by"
+    ]
+  },
+  {
+    "name": "White Leaf",
+    "screen_name": "whiteleaf",
+    "id": 22479443,
+    "id_str": "22479443",
+    "connections": [
+      "followed_by",
+      "muting"
+    ]
+  },
+  {
+    "name": "Andy Piper",
+    "screen_name": "andypiper",
+    "id": 786491,
+    "id_str": "786491",
+    "connections": [
+      "none"
+    ]
+  }
+]
