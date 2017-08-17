@@ -24,7 +24,7 @@ All notable changes to this project will be documented in this file, in reverse 
 
 - Nothing.
 
-## 3.0.1 - TBD
+## 3.0.1 - 2017-08-17
 
 ### Added
 
@@ -45,6 +45,12 @@ All notable changes to this project will be documented in this file, in reverse 
 
   - `owner_id`: a valid user identifier (integer)
   - `owner_screen_name`: a valid user screen name (string)
+
+- [#45](https://github.com/zendframework/ZendService_Twitter/pull/45) adds
+  the ability to pass arrays of user identifiers OR screen names to each of the
+  `usersLookup()` and `friendshipsLookup()` methods, giving them parity with the
+  Twitter API. In each case, if you pass an array of values, the MUST be all
+  user identifiers OR user screen names; you cannot mix the types.
 
 ### Changed
 
