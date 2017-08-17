@@ -6,7 +6,23 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Added
 
-- Nothing.
+- [#46](https://github.com/zendframework/ZendService_Twitter/pull/46) adds
+  the method `listsMembers()`, for retrieving a list of Twitter users associated
+  with a given list. The signature is:
+
+  ```php
+  public function listMembers(
+      int|string $listOrSlug,
+      array $params = []
+  ) : Response
+  ```
+
+  If `$listOrSlug` is a list identifier, no additional `$params` are required.
+  If it is a string list slug, then one of the following `$params` MUST be
+  present:
+
+  - `owner_id`: a valid user identifier (integer)
+  - `owner_screen_name`: a valid user screen name (string)
 
 ### Changed
 
