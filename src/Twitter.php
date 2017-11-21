@@ -616,7 +616,7 @@ class Twitter
             ];
         }
 
-        return $this->post($path, $params);
+        return $this->post($path, ['event' => $params]);
     }
 
     /**
