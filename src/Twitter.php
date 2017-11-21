@@ -17,6 +17,28 @@ use Zend\Uri;
 /**
  * Interact with the Twitter API.
  *
+ * General initialization:
+ *
+ * <code>
+ * $twitter = new Twitter([
+ *     'username' => 'username of user owning keys',
+ *     'oauth_options' => [
+ *         'consumerKey' => 'Twitter API Consumer Key',
+ *         'consumerSecret' => 'Twitter API Consumer Secret',
+ *     ],
+ *     'access_token' => [
+ *         'token' => 'Twitter API Access Token',
+ *         'secret' => 'Twitter API Access Token Secret',
+ *     ],
+ * ]);
+ * </code>
+ *
+ * Once initialized, you may then call any public method with the expected
+ * arguments in order to interact with the API.
+ *
+ * For API endpoints that do not have a 1:1 corresponding method, you may also
+ * use the `get()` and `post()` methods.
+ *
  * Note: most `$id` parameters accept either string or integer values. This is
  * due to the fact that identifiers in the Twitter API may exceed PHP_INT_MAX.
  */
