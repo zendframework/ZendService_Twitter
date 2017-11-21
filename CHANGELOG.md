@@ -48,6 +48,10 @@ All notable changes to this project will be documented in this file, in reverse 
   submission of direct messages to the Twitter API. Payloads for DMs have been
   broken since the 3.0.0 release.
 
+- [#52](https://github.com/zendframework/ZendService_Twitter/pull/52) fixes
+  the `search/tweets` logic concerning geocode parameter validation, ensuring it
+  no longer raises an exception for a valid geocode parameter.
+
 ## 3.0.1 - 2017-08-17
 
 ### Added

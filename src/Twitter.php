@@ -977,12 +977,12 @@ class Twitter
         foreach ($options as $key => $value) {
             switch (strtolower($key)) {
                 case 'geocode':
-                    if (! substr_count($value, ',') !== 2) {
+                    if (substr_count($value, ',') !== 2) {
                         throw new Exception\InvalidArgumentException(
                             '"geocode" must be of the format "latitude,longitude,radius"'
                         );
                     }
-                    list($latitude, $longitude, $radius) = explode(',', $value);
+                    list($latitude, $longitude, $radius) = explode(',', $value, 3);
                     $radius = trim($radius);
                     if (! preg_match('/^\d+(mi|km)$/', $radius)) {
                         throw new Exception\InvalidArgumentException(
