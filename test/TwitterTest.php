@@ -485,6 +485,20 @@ class TwitterTest extends TestCase
         $twitter->statuses->update('Test Message - ' . str_repeat(' Hello ', 140));
     }
 
+    public function testStatusUpdateShouldAllow280CharactersOfUTF8Encoding()
+    {
+        $message = str_repeat('é', 280);
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'statuses/update.json',
+            Http\Request::METHOD_POST,
+            'statuses.update.json',
+            ['status' => $message]
+        ));
+        $response = $twitter->statuses->update($message);
+        $this->assertInstanceOf(TwitterResponse::class, $response);
+    }
+
     public function testPostStatusUpdateEmptyShouldThrowException()
     {
         $this->expectException(Twitter\Exception\ExceptionInterface::class);
