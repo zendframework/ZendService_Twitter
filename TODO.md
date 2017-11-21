@@ -71,3 +71,9 @@ The following is a list of Twitter API methods not yet implemented:
 - users/suggestions
 - users/suggestions/:slug
 - users/suggestions/:slug/members
+
+## Fixes/functionality updates
+
+- Use `Normalizer` class to get normalized string, and then use that to count
+  number of characters for purpose of string lengths.
+- Update allowed status length to 280 characters.
