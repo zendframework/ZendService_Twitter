@@ -2,11 +2,12 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 3.0.2 - TBD
+## 3.0.2 - 2017-11-21
 
 ### Added
 
-- Nothing.
+- [#55](https://github.com/zendframework/ZendService_Twitter/pull/55) adds
+  support for 280-character tweets.
 
 ### Changed
 
