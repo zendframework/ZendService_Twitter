@@ -1272,7 +1272,20 @@ class Twitter
         if ($inReplyToStatusId) {
             $params['in_reply_to_status_id'] = $inReplyToStatusId;
         }
-        return $this->post($path, $params);
+
+        // For some reason, this endpoint DOES NOT accept JSON, but only form
+        // encoded parameters. As such, we do not call `post()` here, but instead
+        // interact directly with the HTTP client.
+        // @see https://github.com/zendframework/ZendService_Twitter/issues/48
+        $httpClient = $this->getHttpClient();
+        $this->init($path, $httpClient);
+        $httpClient->setMethod('POST');
+        $httpClient
+            ->getRequest()
+            ->getHeaders()
+            ->addHeaderLine('Content-Type', 'application/x-www-form-urlencoded');
+        $httpClient->setParameterPost($params);
+        return new Response($httpClient->send());
     }
 
     /**

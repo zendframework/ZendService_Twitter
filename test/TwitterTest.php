@@ -103,6 +103,64 @@ class TwitterTest extends TestCase
         return $client->reveal();
     }
 
+    /**
+     * Quick reusable OAuth client stub setup for form-encoded POST requests.
+     *
+     * It acts exactly like stubOAuthClient(), but instead of creating a
+     * json-encoded payload, it creates a form-encoded one.
+     *
+     * @param string $path Path appended to Twitter API endpoint
+     * @param string $method Do we expect HTTP GET or POST?
+     * @param string $responseFile File containing a valid XML response to the request
+     * @param array $params Expected GET/POST parameters for the request
+     * @param array $responseHeaders Headers expected on the returned response
+     * @return OAuthClient
+     */
+    protected function stubOAuthClientForFormPost(
+        $path,
+        $responseFile = null,
+        array $params = [],
+        array $responseHeaders = []
+    ) {
+        $client = $this->prophesize(OAuthClient::class);
+        $client->setMethod('POST')->will([$client, 'reveal']);
+        $client->setParameterPost($params)->will([$client, 'reveal']);
+        $client->resetParameters()->will([$client, 'reveal']);
+        $client->setUri('https://api.twitter.com/1.1/' . $path)->shouldBeCalled();
+        $client->setHeaders(['Accept-Charset' => 'ISO-8859-1,utf-8'])->will([$client, 'reveal']);
+        $client->clearCookies()->will([$client, 'reveal']);
+        $client->getCookies()->willReturn([]);
+
+        $headers = $this->prophesize(Http\Headers::class);
+        $headers->addHeaderLine('Content-Type', 'application/x-www-form-urlencoded')->shouldBeCalled();
+        $request = $this->prophesize(Http\Request::class);
+        $request->getHeaders()->will([$headers, 'reveal']);
+        $client->getRequest()->will([$request, 'reveal']);
+
+        $response = $this->prophesize(Http\Response::class);
+
+        $response->getBody()->will(function () use ($responseFile) {
+            if (null === $responseFile) {
+                return '{}';
+            }
+            return file_get_contents(__DIR__ . '/_files/' . $responseFile);
+        });
+
+        $headers = $this->prophesize(Http\Headers::class);
+        foreach ($responseHeaders as $headerName => $value) {
+            $headers->has($headerName)->willReturn(true);
+            $header = $this->prophesize(Http\Header\HeaderInterface::class);
+            $header->getFieldValue()->willReturn($value);
+            $headers->get($headerName)->will([$header, 'reveal']);
+        }
+
+        $response->getHeaders()->will([$headers, 'reveal']);
+
+        $client->send()->will([$response, 'reveal']);
+
+        return $client->reveal();
+    }
+
     public function stubHttpClientInitialization()
     {
         $client = $this->prophesize(OAuthClient::class);
@@ -449,13 +507,13 @@ class TwitterTest extends TestCase
 
     /**
      * TODO: Add verification for ALL optional parameters
+     * @see https://github.com/zendframework/ZendService_Twitter/issues/48
      */
     public function testPostStatusUpdateReturnsResponse()
     {
         $twitter = new Twitter\Twitter;
-        $twitter->setHttpClient($this->stubOAuthClient(
+        $twitter->setHttpClient($this->stubOAuthClientForFormPost(
             'statuses/update.json',
-            Http\Request::METHOD_POST,
             'statuses.update.json',
             ['status' => 'Test Message 1']
         ));
