@@ -1233,4 +1233,64 @@ class TwitterTest extends TestCase
 
         $twitter->friendships->lookup($ids);
     }
+
+    public function validGeocodeOptions()
+    {
+        return [
+            'mile-radius' => ['53.3242381,-6.3857848,1mi'],
+            'km-radius'   => ['53.3242381,-6.3857848,1km'],
+        ];
+    }
+
+    /**
+     * @dataProvider validGeocodeOptions
+     * @param string $geocode
+     */
+    public function testSearchTweetsShouldNotInvalidateCorrectlyFormattedGeocodeOption($geocode)
+    {
+        $twitter = new Twitter\Twitter();
+
+        $options = [
+            'geocode' => $geocode,
+        ];
+
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'search/tweets.json',
+            Http\Request::METHOD_GET,
+            'search.tweets.json',
+            array_merge($options, ['q' => 'foo'])
+        ));
+
+        $finalResponse = $twitter->search->tweets('foo', $options);
+        $this->assertInstanceOf(TwitterResponse::class, $finalResponse);
+    }
+
+    public function invalidGeocodeOptions()
+    {
+        return [
+            'too-few-commas'  => ['53.3242381,-6.3857848', 'latitude,longitude,radius'],
+            'too-many-commas' => ['53.3242381,-6.3857848,1mi,why', 'latitude,longitude,radius'],
+            'invalid-radius'  => ['53.3242381,-6.3857848,1', 'Radius segment'],
+        ];
+    }
+
+    /**
+     * @dataProvider invalidGeocodeOptions
+     * @param string $geocode
+     * @param string $expectedMessage
+     */
+    public function testSearchTweetsShouldInvalidateIncorrectlyFormattedGeocodeOption(
+        $geocode,
+        $expectedMessage
+    ) {
+        $twitter = new Twitter\Twitter();
+
+        $options = [
+            'geocode' => $geocode,
+        ];
+
+        $this->expectException(Twitter\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage($expectedMessage);
+        $twitter->search->tweets('foo', $options);
+    }
 }
