@@ -33,6 +33,15 @@ class Twitter
     const OAUTH_BASE_URI = 'https://api.twitter.com/oauth';
 
     /**
+     * Paths that use JSON payloads (vs form-encoded)
+     */
+    const PATHS_JSON_PAYLOAD = [
+        'direct_messages/events/new',
+        'direct_messages/welcome_messages/new',
+        'direct_messages/welcome_messages/rules/new',
+    ];
+
+    /**
      * 246 is the current limit for a status message, 140 characters are displayed
      * initially, with the remainder linked from the web UI or client. The limit is
      * applied to a html encoded UTF-8 string (i.e. entities are counted in the limit
@@ -402,7 +411,12 @@ class Twitter
     {
         $client = $this->getHttpClient();
         $this->init($path, $client);
-        $response = $this->performPost(Http\Request::METHOD_POST, $data, $client);
+        $response = $this->performPost(
+            Http\Request::METHOD_POST,
+            $data,
+            $client,
+            in_array($path, self::PATHS_JSON_PAYLOAD, true)
+        );
         return new Response($response);
     }
 
@@ -1272,6 +1286,7 @@ class Twitter
         if ($inReplyToStatusId) {
             $params['in_reply_to_status_id'] = $inReplyToStatusId;
         }
+
         return $this->post($path, $params);
     }
 
@@ -1499,21 +1514,17 @@ class Twitter
      * is JSON-encoded before being passed to the request body.
      *
      * @param null|string|array|\stdClass $data Raw data to send
+     * @param bool $asJson Whether or not the data should be submitted as JSON
+     *     (vs form urlencoded, which is the default)
      */
-    protected function performPost(string $method, $data, Http\Client $client) : Http\Response
+    protected function performPost(string $method, $data, Http\Client $client, bool $asJson) : Http\Response
     {
-        if (is_array($data) || is_object($data)) {
-            $data = json_encode($data, $this->jsonFlags);
-        }
-
-        if (! empty($data)) {
-            $client->setRawBody($data);
-            $client->getRequest()
-                ->getHeaders()
-                ->addHeaderLine('Content-Type', 'application/json');
-        }
-
         $client->setMethod($method);
+
+        $asJson
+            ? $this->prepareJsonPayloadForClient($client, $data)
+            : $this->prepareFormPayloadForClient($client, $data);
+
         return $client->send();
     }
 
@@ -1628,5 +1639,37 @@ class Twitter
         array_walk($ids, Closure::fromCallable([$this, 'validateScreenName']));
         $params['screen_name'] = implode(',', $ids);
         return $params;
+    }
+
+    /**
+     * Prepare a JSON payload for the HTTP client.
+     */
+    private function prepareJsonPayloadForClient(Http\Client $client, $data)
+    {
+        if (is_array($data) || is_object($data)) {
+            $data = json_encode($data, $this->jsonFlags);
+        }
+
+        if (empty($data) || ! is_string($data)) {
+            return;
+        }
+
+        $client->getRequest()
+            ->getHeaders()
+            ->addHeaderLine('Content-Type', 'application/json');
+
+        $client->setRawBody($data);
+    }
+
+    /**
+     * Prepare a form-url-encoded payload for the HTTP client.
+     */
+    private function prepareFormPayloadForClient(Http\Client $client, $data)
+    {
+        if (! is_array($data)) {
+            return;
+        }
+
+        $client->setParameterPost($data);
     }
 }

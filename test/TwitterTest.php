@@ -65,18 +65,16 @@ class TwitterTest extends TestCase
         $client->setHeaders(['Accept-Charset' => 'ISO-8859-1,utf-8'])->will([$client, 'reveal']);
         $client->clearCookies()->will([$client, 'reveal']);
         $client->getCookies()->willReturn([]);
+
         if (null !== $params && $method === 'GET') {
             $client->setParameterGet($params)->shouldBeCalled();
         }
-        if (null !== $params && $method === 'POST') {
-            $requestBody = json_encode($params, $this->jsonFlags);
-            $client->setRawBody($requestBody)->shouldBeCalled();
 
-            $headers = $this->prophesize(Http\Headers::class);
-            $headers->addHeaderLine('Content-Type', 'application/json')->shouldBeCalled();
-            $request = $this->prophesize(Http\Request::class);
-            $request->getHeaders()->will([$headers, 'reveal']);
-            $client->getRequest()->will([$request, 'reveal']);
+        if ($method === 'POST' && null !== $params) {
+            $pathMinusExtension = str_replace('.json', '', $path);
+            in_array($pathMinusExtension, Twitter\Twitter::PATHS_JSON_PAYLOAD, true)
+                ? $this->prepareJsonPayloadForClient($client, $params)
+                : $this->prepareFormEncodedPayloadForClient($client, $params);
         }
 
         $response = $this->prophesize(Http\Response::class);
@@ -101,6 +99,23 @@ class TwitterTest extends TestCase
         $client->send()->will([$response, 'reveal']);
 
         return $client->reveal();
+    }
+
+    protected function prepareJsonPayloadForClient($client, array $params = null)
+    {
+        $headers = $this->prophesize(Http\Headers::class);
+        $headers->addHeaderLine('Content-Type', 'application/json')->shouldBeCalled();
+        $request = $this->prophesize(Http\Request::class);
+        $request->getHeaders()->will([$headers, 'reveal']);
+        $client->getRequest()->will([$request, 'reveal']);
+
+        $requestBody = json_encode($params, $this->jsonFlags);
+        $client->setRawBody($requestBody)->shouldBeCalled();
+    }
+
+    protected function prepareFormEncodedPayloadForClient($client, array $params = null)
+    {
+        $client->setParameterPost($params)->will([$client, 'reveal']);
     }
 
     public function stubHttpClientInitialization()
