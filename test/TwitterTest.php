@@ -848,13 +848,15 @@ class TwitterTest extends TestCase
             Http\Request::METHOD_POST,
             'direct_messages.events.new.json',
             [
-                'type' => 'message_create',
-                'message_create' => [
-                    'target' => [
-                        'recipient_id' => '1',
-                    ],
-                    'message_data' => [
-                        'text' => 'Message',
+                'event' => [
+                    'type' => 'message_create',
+                    'message_create' => [
+                        'target' => [
+                            'recipient_id' => '1',
+                        ],
+                        'message_data' => [
+                            'text' => 'Message',
+                        ],
                     ],
                 ],
             ]
@@ -889,13 +891,15 @@ class TwitterTest extends TestCase
         $client->getRequest()->will([$request, 'reveal']);
 
         $data = [
-            'type' => 'message_create',
-            'message_create' => [
-                'target' => [
-                    'recipient_id' => '1',
-                ],
-                'message_data' => [
-                    'text' => 'Message',
+            'event' => [
+                'type' => 'message_create',
+                'message_create' => [
+                    'target' => [
+                        'recipient_id' => '1',
+                    ],
+                    'message_data' => [
+                        'text' => 'Message',
+                    ],
                 ],
             ],
         ];
@@ -957,13 +961,15 @@ class TwitterTest extends TestCase
             Http\Request::METHOD_POST,
             'direct_messages.events.new.json',
             [
-                'type' => 'message_create',
-                'message_create' => [
-                    'target' => [
-                        'recipient_id' => '1',
-                    ],
-                    'message_data' => [
-                        'text' => 'Message',
+                'event' => [
+                    'type' => 'message_create',
+                    'message_create' => [
+                        'target' => [
+                            'recipient_id' => '1',
+                        ],
+                        'message_data' => [
+                            'text' => 'Message',
+                        ],
                     ],
                 ],
             ]
@@ -980,17 +986,19 @@ class TwitterTest extends TestCase
             Http\Request::METHOD_POST,
             'direct_messages.events.new.media.json',
             [
-                'type' => 'message_create',
-                'message_create' => [
-                    'target' => [
-                        'recipient_id' => '1',
-                    ],
-                    'message_data' => [
-                        'text' => 'Message',
-                        'attachment' => [
-                            'type' => 'media',
-                            'media' => [
-                                'id' => 'XXXX',
+                'event' => [
+                    'type' => 'message_create',
+                    'message_create' => [
+                        'target' => [
+                            'recipient_id' => '1',
+                        ],
+                        'message_data' => [
+                            'text' => 'Message',
+                            'attachment' => [
+                                'type' => 'media',
+                                'media' => [
+                                    'id' => 'XXXX',
+                                ],
                             ],
                         ],
                     ],
