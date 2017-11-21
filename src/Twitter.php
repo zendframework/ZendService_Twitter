@@ -8,6 +8,7 @@
 namespace ZendService\Twitter;
 
 use Closure;
+use Normalizer;
 use Traversable;
 use ZendOAuth as OAuth;
 use Zend\Http;
@@ -19,6 +20,15 @@ use Zend\Uri;
  *
  * Note: most `$id` parameters accept either string or integer values. This is
  * due to the fact that identifiers in the Twitter API may exceed PHP_INT_MAX.
+ *
+ * Note on character counting: Twitter accepts UTF-8 encoded text via the API,
+ * and counts multi-byte characters as a single character. PHP's strlen(),
+ * however, treats each byte as a character for purposes of determing the
+ * string length. To get around that, we can pass the message to utf8_decode,
+ * which will replace any multi-byte characters with a `?`; this works fine
+ * for counting lengths.
+ *
+ * @see https://developer.twitter.com/en/docs/basics/counting-characters
  */
 class Twitter
 {
@@ -42,14 +52,9 @@ class Twitter
     ];
 
     /**
-     * 246 is the current limit for a status message, 140 characters are displayed
-     * initially, with the remainder linked from the web UI or client. The limit is
-     * applied to a html encoded UTF-8 string (i.e. entities are counted in the limit
-     * which may appear unusual but is a security measure).
-     *
-     * This should be reviewed in the future...
+     * As of November 2017, the character limit for status messages is 280.
      */
-    const STATUS_MAX_CHARACTERS = 246;
+    const STATUS_MAX_CHARACTERS = 280;
 
     /**
      * @var array
@@ -586,7 +591,7 @@ class Twitter
     {
         $path = 'direct_messages/events/new';
 
-        $len = iconv_strlen($text, 'UTF-8');
+        $len = strlen(utf8_decode($text));
         if (0 === $len) {
             throw new Exception\InvalidArgumentException(
                 'Direct message must contain at least one character'
@@ -980,7 +985,7 @@ class Twitter
     {
         $path = 'search/tweets';
 
-        $len = iconv_strlen($query, 'UTF-8');
+        $len = strlen(utf8_decode($query));
         if (0 == $len) {
             throw new Exception\InvalidArgumentException(
                 'Query must contain at least one character'
@@ -1260,13 +1265,13 @@ class Twitter
     public function statusesUpdate(string $status, $inReplyToStatusId = null, $extraAttributes = []) : Response
     {
         $path = 'statuses/update';
-        $len = iconv_strlen(htmlspecialchars($status, ENT_QUOTES, 'UTF-8'), 'UTF-8');
+        $len = strlen(utf8_decode($status));
         if ($len > self::STATUS_MAX_CHARACTERS) {
-            throw new Exception\OutOfRangeException(
-                'Status must be no more than '
-                . self::STATUS_MAX_CHARACTERS
-                . ' characters in length'
-            );
+            throw new Exception\OutOfRangeException(sprintf(
+                'Status must be no more than %d characters in length; received %d',
+                self::STATUS_MAX_CHARACTERS,
+                $len
+            ));
         } elseif (0 == $len) {
             throw new Exception\InvalidArgumentException(
                 'Status must contain at least one character'
@@ -1392,7 +1397,7 @@ class Twitter
     {
         $path = 'users/search';
 
-        $len = iconv_strlen($query, 'UTF-8');
+        $len = strlen(utf8_decode($query));
         if (0 == $len) {
             throw new Exception\InvalidArgumentException(
                 'Query must contain at least one character'
