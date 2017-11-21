@@ -22,13 +22,19 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Fixed
 
-- [#51](https://github.com/zendframework/ZendService_Twitter/pull/51) fixes
-  submission of direct messages to the Twitter API. Payloads for DMs have been
-  broken since the 3.0.0 release.
+- [#53](https://github.com/zendframework/ZendService_Twitter/pull/53) fixes
+  issues in the majority of POST endpoints. Due to a mis-read of the Twitter API
+  documentation, we were sending JSON payloads, when only a small subset of such
+  endpoints actually can accept JSON. In particular, `statuses/update` was
+  affected. The patch in this releases fixes all such endpoints.
 
 - [#52](https://github.com/zendframework/ZendService_Twitter/pull/52) fixes
   the `search/tweets` logic concerning geocode parameter validation, ensuring it
   no longer raises an exception for a valid geocode parameter.
+
+- [#51](https://github.com/zendframework/ZendService_Twitter/pull/51) fixes
+  submission of direct messages to the Twitter API. Payloads for DMs have been
+  broken since the 3.0.0 release.
 
 ## 3.0.1 - 2017-08-17
 
