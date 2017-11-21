@@ -1502,15 +1502,10 @@ class Twitter
      */
     protected function performPost(string $method, $data, Http\Client $client) : Http\Response
     {
-        if (is_array($data) || is_object($data)) {
-            $data = json_encode($data, $this->jsonFlags);
-        }
-
-        if (! empty($data)) {
+        if (is_string($data)) {
             $client->setRawBody($data);
-            $client->getRequest()
-                ->getHeaders()
-                ->addHeaderLine('Content-Type', 'application/json');
+        } elseif (is_array($data) || is_object($data)) {
+            $client->setParameterPost((array) $data);
         }
 
         $client->setMethod($method);
