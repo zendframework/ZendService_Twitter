@@ -22,7 +22,9 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Fixed
 
-- Nothing.
+- [#51](https://github.com/zendframework/ZendService_Twitter/pull/51) fixes
+  submission of direct messages to the Twitter API. Payloads for DMs have been
+  broken since the 3.0.0 release.
 
 ## 3.0.1 - 2017-08-17
 
