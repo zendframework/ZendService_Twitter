@@ -1114,6 +1114,10 @@ class Twitter
                 case 'max_id':
                     $params['max_id'] = $this->validInteger($value);
                     break;
+                case 'tweet_mode':
+                    unset($params[$key]);
+                    $params['tweet_mode'] = 'extended';
+                    break;
                 case 'trim_user':
                     if (in_array($value, [true, 'true', 't', 1, '1'])) {
                         $value = true;
@@ -1168,6 +1172,10 @@ class Twitter
                     break;
                 case 'max_id':
                     $params['max_id'] = $this->validInteger($value);
+                    break;
+                case 'tweet_mode':
+                    unset($params[$key]);
+                    $params['tweet_mode'] = 'extended';
                     break;
                 case 'trim_user':
                     if (in_array($value, [true, 'true', 't', 1, '1'])) {
@@ -1333,6 +1341,10 @@ class Twitter
                     break;
                 case 'max_id':
                     $params['max_id'] = $this->validInteger($value);
+                    break;
+                case 'tweet_mode':
+                    unset($params[$key]);
+                    $params['tweet_mode'] = 'extended';
                     break;
                 case 'trim_user':
                     if (in_array($value, [true, 'true', 't', 1, '1'])) {
