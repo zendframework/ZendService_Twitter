@@ -309,6 +309,7 @@ class TwitterTest extends TestCase
                 'since_id' => '10000',
                 'max_id' => '20000',
                 'screen_name' => 'twitter',
+                'tweet_mode' => 'extended',
             ]
         ));
         $twitter->statuses->userTimeline([
@@ -319,7 +320,8 @@ class TwitterTest extends TestCase
             'user_id' => '783214',
             'since_id' => '10000',
             'max_id' => '20000',
-            'screen_name' => 'twitter'
+            'screen_name' => 'twitter',
+            'tweet_mode' => 'extended',
         ]);
     }
 
@@ -443,6 +445,19 @@ class TwitterTest extends TestCase
             ['count' => 3]
         ));
         $response = $twitter->statuses->homeTimeline(['count' => 3]);
+        $this->assertInstanceOf(TwitterResponse::class, $response);
+    }
+
+    public function testHomeTimelineWithExtendedModeReturnsResults()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'statuses/home_timeline.json',
+            Http\Request::METHOD_GET,
+            'statuses.home_timeline.page.json',
+            ['tweet_mode' => 'extended']
+        ));
+        $response = $twitter->statuses->homeTimeline(['tweet_mode' => 'extended']);
         $this->assertInstanceOf(TwitterResponse::class, $response);
     }
 
@@ -610,6 +625,19 @@ class TwitterTest extends TestCase
             []
         ));
         $response = $twitter->statuses->mentionsTimeline();
+        $this->assertInstanceOf(TwitterResponse::class, $response);
+    }
+
+    public function testMentionsTimelineWithExtendedModeReturnsResults()
+    {
+        $twitter = new Twitter\Twitter;
+        $twitter->setHttpClient($this->stubOAuthClient(
+            'statuses/mentions_timeline.json',
+            Http\Request::METHOD_GET,
+            'statuses.mentions_timeline.json',
+            ['tweet_mode' => 'extended']
+        ));
+        $response = $twitter->statuses->mentionsTimeline(['tweet_mode' => 'extended']);
         $this->assertInstanceOf(TwitterResponse::class, $response);
     }
 
