@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 3.0.3 - TBD
+## 3.0.3 - 2018-05-14
 
 ### Added
 
@@ -10,7 +10,8 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Changed
 
-- Nothing.
+- [#57](https://github.com/zendframework/ZendService_Twitter/pull/57) adds awareness of the `tweet_mode=extended` parameter to each of
+  the home, mentions, and user timeline API endpoint methods.
 
 ### Deprecated
 
