@@ -24,11 +24,11 @@ All notable changes to this project will be documented in this file, in reverse 
 
 - Nothing.
 
-## 3.0.4 - TBD
+## 3.0.4 - 2019-02-07
 
 ### Added
 
-- Nothing.
+- [#58](https://github.com/zendframework/ZendService_Twitter/pull/58) adds support for PHP 7.3.
 
 ### Changed
 
