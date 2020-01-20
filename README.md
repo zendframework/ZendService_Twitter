@@ -2,7 +2,7 @@
 
 > ## Repository abandoned 2019-12-31
 >
-> This repository has moved to laminas/laminas-twitter.
+> This repository has moved to [laminas/laminas-twitter](https://github.com/laminas/laminas-twitter).
 
 [![Build Status](https://secure.travis-ci.org/zendframework/ZendService_Twitter.svg?branch=master)](https://secure.travis-ci.org/zendframework/ZendService_Twitter)
 [![Coverage Status](https://coveralls.io/repos/github/zendframework/ZendService_Twitter/badge.svg?branch=master)](https://coveralls.io/github/zendframework/ZendService_Twitter?branch=master)
